@@ -1,9 +1,6 @@
 package goref
 
-import (
-	"math"
-	"time"
-)
+import "time"
 
 // Histogram -- Keeps track of time.Duration values and their distribution
 //
@@ -11,8 +8,6 @@ import (
 // by goref should be considered immutable)
 type Histogram interface {
 	Count() int64
-	Min() time.Duration
-	Max() time.Duration
 	Sum() time.Duration
 	Average() time.Duration
 	Resolution() time.Duration
@@ -29,8 +24,6 @@ type histogram struct {
 	resolution time.Duration
 
 	count int64
-	min   time.Duration
-	max   time.Duration
 	sum   time.Duration
 
 	buckets []int
@@ -41,15 +34,12 @@ func newHistogram(resolution time.Duration, buckets int) *histogram {
 	var rc = histogram{
 		resolution: resolution,
 		buckets:    make([]int, buckets), // all initialized with 0
-		min:        math.MaxInt64,
 	}
 	return &rc
 }
 
 func (h *histogram) Average() time.Duration { return h.sum / time.Duration(h.count) }
 func (h *histogram) Count() int64           { return h.count }
-func (h *histogram) Max() time.Duration     { return h.max }
-func (h *histogram) Min() time.Duration     { return h.min }
 func (h *histogram) Sum() time.Duration     { return h.sum }
 
 // getBucket -- returns the right bucket for the given value
@@ -74,12 +64,6 @@ func (h *histogram) getBucket(value time.Duration) int {
 func (h *histogram) Add(value time.Duration) {
 	h.sum += value
 	h.count++
-	if value < h.min {
-		h.min = value
-	}
-	if value > h.max {
-		h.max = value
-	}
 
 	var bucket = h.getBucket(value)
 	if bucket < 0 || bucket >= len(h.buckets) {
@@ -100,11 +84,8 @@ func (h *histogram) Since(other Histogram) *histogram {
 	}
 
 	var rc = histogram{
-		buckets: make([]int, 0, len(otherValues)),
-		count:   h.count - other.Count(),
-		// TODO think about better values for min and max
-		max:        h.max,
-		min:        h.min,
+		buckets:    make([]int, 0, len(otherValues)),
+		count:      h.count - other.Count(),
 		resolution: h.resolution,
 		sum:        h.sum - other.Sum(),
 	}
