@@ -1,7 +1,6 @@
 package goref
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -12,26 +11,27 @@ const NS = time.Nanosecond
 const US = time.Microsecond
 
 func TestBuckets(t *testing.T) {
-	var values = map[time.Duration]int{
-		// everything lower than h.resolution should end up in bucket 0
-		999 * time.Nanosecond: -1,
+	var h = newHistogram()
+	assert.Equal(t, 0, h.getBucket(-1234*NS), "negative values should end up in bucket 0")
+	assert.Equal(t, 0, h.getBucket(0))
 
-		1 * US:   0,
-		2 * US:   1,
-		3 * US:   1,
-		4 * US:   2,
-		7 * US:   2,
-		8 * US:   3,
-		15 * US:  3,
-		16 * US:  4,
-		31 * US:  4,
-		127 * US: 6,
-		128 * US: 7,
-	}
+	assert.Equal(t, 1, h.getBucket(1*NS))
+	assert.Equal(t, 2, h.getBucket(2*NS))
+	assert.Equal(t, 2, h.getBucket(3*NS))
+	assert.Equal(t, 3, h.getBucket(4*NS))
+	assert.Equal(t, 3, h.getBucket(7*NS))
+	assert.Equal(t, 4, h.getBucket(8*NS))
+	assert.Equal(t, 4, h.getBucket(15*NS))
+	assert.Equal(t, 5, h.getBucket(16*NS))
+	assert.Equal(t, 5, h.getBucket(31*NS))
+	assert.Equal(t, 7, h.getBucket(127*NS))
+	assert.Equal(t, 8, h.getBucket(128*NS))
+	assert.Equal(t, 10, h.getBucket(1023*NS))
+	assert.Equal(t, 11, h.getBucket(1024*NS))
 
-	var h = newHistogram(US, 8)
-	for value, expected := range values {
-		var actual = h.getBucket(value)
-		assert.Equal(t, expected, actual, fmt.Sprintf("for value %dns", value/time.Nanosecond))
-	}
+	assert.Equal(t, 0, h.getBucket(-3*US))
+	assert.Equal(t, 10, h.getBucket(1*US))
+	assert.Equal(t, 11, h.getBucket(2*US))
+	assert.Equal(t, 12, h.getBucket(3*US))
+	assert.Equal(t, 12, h.getBucket(4*US))
 }

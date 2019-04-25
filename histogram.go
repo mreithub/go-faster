@@ -12,7 +12,7 @@ type Histogram interface {
 	Average() time.Duration
 	Resolution() time.Duration
 
-	GetBuckets() ([]time.Duration, []int)
+	GetValues() ([]time.Duration, []int)
 	GetPercentiles(values ...int) []time.Duration
 
 	// Since -- subtracts the values of both histograms and returns the difference as new
@@ -21,20 +21,15 @@ type Histogram interface {
 }
 
 type histogram struct {
-	resolution time.Duration
-
 	count int64
 	sum   time.Duration
 
-	buckets []int
+	buckets [64]int
 }
 
 // NewHistogram -- returns a Histogram instance
-func newHistogram(resolution time.Duration, buckets int) *histogram {
-	var rc = histogram{
-		resolution: resolution,
-		buckets:    make([]int, buckets), // all initialized with 0
-	}
+func newHistogram() *histogram {
+	var rc = histogram{}
 	return &rc
 }
 
@@ -42,10 +37,8 @@ func (h *histogram) Average() time.Duration { return h.sum / time.Duration(h.cou
 func (h *histogram) Count() int64           { return h.count }
 func (h *histogram) Sum() time.Duration     { return h.sum }
 
-// getBucket -- returns the right bucket for the given value
-// (-1 if value < h.resolution, >=len(h.buckets) if out of bounds)
+// getBucket -- returns the right bucket for the given value (0 if value <= 0)
 func (h *histogram) getBucket(value time.Duration) int {
-	value /= h.resolution
 	var rc = 0
 
 	for value >= 0x100 {
@@ -58,7 +51,11 @@ func (h *histogram) getBucket(value time.Duration) int {
 		rc++
 	}
 
-	return rc - 1
+	// in theory this should never happen (rc should never be greater than 63)
+	if rc >= len(h.buckets) {
+		rc = len(h.buckets) - 1
+	}
+	return rc
 }
 
 func (h *histogram) Add(value time.Duration) {
@@ -74,24 +71,15 @@ func (h *histogram) Add(value time.Duration) {
 }
 
 func (h *histogram) Since(other Histogram) *histogram {
-	if other.Resolution() != h.resolution {
-		return nil
-	}
-
-	var _, otherValues = other.GetBuckets()
-	if len(otherValues) != len(h.buckets) {
-		return nil
-	}
+	var _, otherValues = other.GetValues()
 
 	var rc = histogram{
-		buckets:    make([]int, 0, len(otherValues)),
-		count:      h.count - other.Count(),
-		resolution: h.resolution,
-		sum:        h.sum - other.Sum(),
+		count: h.count - other.Count(),
+		sum:   h.sum - other.Sum(),
 	}
 
 	for i, myVal := range h.buckets {
-		rc.buckets = append(rc.buckets, myVal-otherValues[i])
+		rc.buckets[i] = myVal - otherValues[i]
 	}
 
 	return &rc
