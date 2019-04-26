@@ -1,4 +1,4 @@
-package goref
+package histogram
 
 import (
 	"fmt"

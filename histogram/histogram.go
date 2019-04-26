@@ -1,4 +1,4 @@
-package goref
+package histogram
 
 import "time"
 
@@ -12,7 +12,7 @@ type Histogram interface {
 	Average() time.Duration
 	Median() time.Duration
 
-	// GetValues -- returns each bucket's lower bound and the number of values seen
+	// GetValues -- returns each bucket's lower bound and its value count
 	//
 	// will skip empty buckets at the start and end
 	GetValues() ([]time.Duration, []int)
