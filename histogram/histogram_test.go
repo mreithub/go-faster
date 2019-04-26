@@ -13,7 +13,7 @@ const NS = time.Nanosecond
 const US = time.Microsecond
 
 func TestGetBucket(t *testing.T) {
-	var h histogram
+	var h Histogram
 
 	// <= 0 go into bucket 0
 	assert.Equal(t, 0, h.getBucket(-1234*NS), "negative values should end up in bucket 0")
@@ -41,10 +41,13 @@ func TestGetBucket(t *testing.T) {
 	assert.Equal(t, 12, h.getBucket(4*US))
 
 	assert.Equal(t, 63, h.getBucket(math.MaxInt64))
+	var maxPlus1 time.Duration = math.MaxInt64
+	maxPlus1++
+	assert.Equal(t, 0, h.getBucket(maxPlus1))
 }
 
 func TestEmptyBuckets(t *testing.T) {
-	var h histogram
+	var h Histogram
 
 	assert.Equal(t, []time.Duration{}, h.GetPercentiles())
 	assert.Equal(t, []time.Duration{0, 0, 0, 0, 0, 0, 0}, h.GetPercentiles(-88, 0, 25, 50, 75, 100, 200))
@@ -55,7 +58,7 @@ func TestEmptyBuckets(t *testing.T) {
 }
 
 func TestMinValues(t *testing.T) {
-	var h histogram
+	var h Histogram
 
 	for i, d := range minValues {
 		if i > 0 {
@@ -68,7 +71,7 @@ func TestMinValues(t *testing.T) {
 }
 
 func TestHistogram(t *testing.T) {
-	var h = histogram{
+	var h = Histogram{
 		buckets: [64]int{1, 1, 1, 1, 1, 1, 1, 1},
 		count:   8,
 		sum:     (1 + 2 + 4 + 8 + 16 + 32 + 64 + 128) * NS,
@@ -76,13 +79,10 @@ func TestHistogram(t *testing.T) {
 
 	assert.EqualValues(t, []time.Duration{0, 2 * NS, 8 * NS, 32 * NS, 128 * NS}, h.GetPercentiles(0, 25, 50, 75, 100))
 
-	h = histogram{
+	h = Histogram{
 		buckets: [64]int{0, 0, 0, 3, 2, 11, 8, 16, 24, 8, 2, 0},
 		count:   3 + 2 + 11 + 8 + 16 + 24 + 8 + 2,
 	}
-
-	// make sure all interface methods are implemented
-	var _ Histogram = &h
 
 	var _, values = h.GetValues()
 	assert.EqualValues(t, h.buckets[3:11], values)

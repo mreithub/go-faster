@@ -4,30 +4,9 @@ import "time"
 
 // Histogram -- Keeps track of time.Duration values and their distribution
 //
-// The default Histogram implementation does no locking (but all instances returned
-// by goref should be considered immutable)
-type Histogram interface {
-	Count() int64
-	Sum() time.Duration
-	Average() time.Duration
-	Median() time.Duration
-
-	// GetValues -- returns each bucket's lower bound and its value count
-	//
-	// will skip empty buckets at the start and end
-	GetValues() ([]time.Duration, []int)
-
-	// GetPercentiles -- returns estimates for the percentile values in question
-	//
-	// Make sure to order 'values' - GetPercentiles() will only traverse the value buckets once
-	GetPercentiles(values ...int) []time.Duration
-
-	// Since -- subtracts the values of both histograms and returns the difference as new
-	// object (will return nil if the histograms are incompatible (e.g. different resolution))
-	Since(other Histogram) Histogram
-}
-
-type histogram struct {
+// This struct is not thread safe (but all instances returned by goref
+// should be considered immutable)
+type Histogram struct {
 	count int64
 	sum   time.Duration
 
@@ -35,13 +14,20 @@ type histogram struct {
 	buckets [64]int
 }
 
-func (h *histogram) Average() time.Duration { return h.sum / time.Duration(h.count) }
-func (h *histogram) Count() int64           { return h.count }
-func (h *histogram) Sum() time.Duration     { return h.sum }
-func (h *histogram) Median() time.Duration  { return h.GetPercentiles(50)[0] }
+// Average -- returns the average of all values stored in the Histogram
+func (h *Histogram) Average() time.Duration { return h.sum / time.Duration(h.count) }
+
+// Count -- returns the number of values stored in the Histogram
+func (h *Histogram) Count() int64 { return h.count }
+
+// Sum -- Returns the Sum of all values stored in the Histogram
+func (h *Histogram) Sum() time.Duration { return h.sum }
+
+// Median -- Estimates the median of all values stored in the histogram
+func (h *Histogram) Median() time.Duration { return h.GetPercentiles(50)[0] }
 
 // getBucket -- returns the right bucket for the given value (0 if value <= 0, 1..63 for anything else)
-func (h *histogram) getBucket(value time.Duration) int {
+func (h *Histogram) getBucket(value time.Duration) int {
 	var rc = 0
 
 	for value >= 0x100 {
@@ -61,7 +47,8 @@ func (h *histogram) getBucket(value time.Duration) int {
 	return rc
 }
 
-func (h *histogram) Add(value time.Duration) {
+// Add -- inserts a value into the Histogram
+func (h *Histogram) Add(value time.Duration) {
 	h.sum += value
 	h.count++
 
@@ -73,11 +60,15 @@ func (h *histogram) Add(value time.Duration) {
 	h.buckets[bucket]++
 }
 
-func (h *histogram) GetPercentile(value int) time.Duration {
+// GetPercentile -- Convenience wrapper around GetPercentiles() for a single value
+func (h *Histogram) GetPercentile(value int) time.Duration {
 	return h.GetPercentiles(value)[0]
 }
 
-func (h *histogram) GetPercentiles(values ...int) []time.Duration {
+// GetPercentiles -- returns estimates for the percentile values in question
+//
+// Make sure to order 'values' - GetPercentiles() will only traverse the value buckets once
+func (h *Histogram) GetPercentiles(values ...int) []time.Duration {
 	var rc = make([]time.Duration, 0, len(values))
 
 	var buckets = h.buckets[:]
@@ -112,7 +103,10 @@ func (h *histogram) GetPercentiles(values ...int) []time.Duration {
 	return rc
 }
 
-func (h *histogram) GetValues() ([]time.Duration, []int) {
+// GetValues -- returns each bucket's lower bound and the number of values in it
+//
+// will skip empty buckets at the start and end
+func (h *Histogram) GetValues() ([]time.Duration, []int) {
 	var skipFrom, skipTo = 0, len(h.buckets)
 
 	for i, value := range h.buckets {
@@ -132,16 +126,16 @@ func (h *histogram) GetValues() ([]time.Duration, []int) {
 	return minValues[skipFrom:skipTo], h.buckets[skipFrom:skipTo]
 }
 
-func (h *histogram) Since(other Histogram) Histogram {
-	var _, otherValues = other.GetValues()
-
-	var rc = histogram{
-		count: h.count - other.Count(),
-		sum:   h.sum - other.Sum(),
+// Since -- subtracts the values of both histograms and returns the difference as new
+// object (will return nil if the histograms are incompatible (e.g. different resolution))
+func (h *Histogram) Since(other Histogram) *Histogram {
+	var rc = Histogram{
+		count: h.count - other.count,
+		sum:   h.sum - other.sum,
 	}
 
 	for i, myVal := range h.buckets {
-		rc.buckets[i] = myVal - otherValues[i]
+		rc.buckets[i] = myVal - other.buckets[i]
 	}
 
 	return &rc
