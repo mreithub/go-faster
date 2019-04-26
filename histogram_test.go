@@ -1,6 +1,8 @@
 package goref
 
 import (
+	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -10,11 +12,14 @@ import (
 const NS = time.Nanosecond
 const US = time.Microsecond
 
-func TestBuckets(t *testing.T) {
-	var h = newHistogram()
+func TestGetBucket(t *testing.T) {
+	var h histogram
+
+	// <= 0 go into bucket 0
 	assert.Equal(t, 0, h.getBucket(-1234*NS), "negative values should end up in bucket 0")
 	assert.Equal(t, 0, h.getBucket(0))
 
+	// only '1' goes into bucket 1
 	assert.Equal(t, 1, h.getBucket(1*NS))
 	assert.Equal(t, 2, h.getBucket(2*NS))
 	assert.Equal(t, 2, h.getBucket(3*NS))
@@ -34,4 +39,53 @@ func TestBuckets(t *testing.T) {
 	assert.Equal(t, 11, h.getBucket(2*US))
 	assert.Equal(t, 12, h.getBucket(3*US))
 	assert.Equal(t, 12, h.getBucket(4*US))
+
+	assert.Equal(t, 63, h.getBucket(math.MaxInt64))
+}
+
+func TestEmptyBuckets(t *testing.T) {
+	var h histogram
+
+	assert.Equal(t, []time.Duration{}, h.GetPercentiles())
+	assert.Equal(t, []time.Duration{0, 0, 0, 0, 0, 0, 0}, h.GetPercentiles(-88, 0, 25, 50, 75, 100, 200))
+
+	var buckets, values = h.GetValues()
+	assert.Empty(t, buckets)
+	assert.Empty(t, values)
+}
+
+func TestMinValues(t *testing.T) {
+	var h histogram
+
+	for i, d := range minValues {
+		if i > 0 {
+			assert.Equal(t, i-1, h.getBucket(d-1), fmt.Sprintf("for value #%d: %d-1", i, d))
+		} else {
+			assert.Equal(t, 0, h.getBucket(d-1))
+		}
+		assert.Equal(t, i, h.getBucket(d), fmt.Sprintf("for value #%d: %d", i, d))
+	}
+}
+
+func TestHistogram(t *testing.T) {
+	var h = histogram{
+		buckets: [64]int{1, 1, 1, 1, 1, 1, 1, 1},
+		count:   8,
+		sum:     (1 + 2 + 4 + 8 + 16 + 32 + 64 + 128) * NS,
+	}
+
+	assert.EqualValues(t, []time.Duration{0, 2 * NS, 8 * NS, 32 * NS, 128 * NS}, h.GetPercentiles(0, 25, 50, 75, 100))
+
+	h = histogram{
+		buckets: [64]int{0, 0, 0, 3, 2, 11, 8, 16, 24, 8, 2, 0},
+		count:   3 + 2 + 11 + 8 + 16 + 24 + 8 + 2,
+	}
+
+	// make sure all interface methods are implemented
+	var _ Histogram = &h
+
+	var _, values = h.GetValues()
+	assert.EqualValues(t, h.buckets[3:11], values)
+
+	//assert.EqualValues(t, []time.Duration{4 * NS, 512 * NS}, h.GetPercentiles(0, 100))
 }
