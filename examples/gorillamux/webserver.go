@@ -72,7 +72,7 @@ func main() {
 
 	r.HandleFunc("/", indexHTML)
 	r.HandleFunc("/delayed.html", delayedHTML)
-	r.Handle("/_faster/", web.NewHandler("/_faster/", faster.Singleton))
+	r.PathPrefix("/_faster/").Handler(web.NewHandler("/_faster/", faster.Singleton))
 
 	var handler = handlers.LoggingHandler(os.Stdout, trackRequests(r))
 
