@@ -5,16 +5,16 @@ import "time"
 // Snapshot -- point-in-time copy of a GoFaster instance
 type Snapshot struct {
 	// Currently active invocations
-	Active int32 `json:"active"`
+	Active int32 `json:"active,omitempty"`
 
 	// Total number of (finished) invocations
-	Count int64 `json:"count"`
+	Count int64 `json:"count,omitempty"`
 
 	// Total time spent
-	Duration time.Duration `json:"duration"`
+	Duration time.Duration `json:"duration,omitempty"`
 
 	// Computed average run time, provided for convenience
-	Average time.Duration `json:"average"`
+	Average time.Duration `json:"average,omitempty"`
 
 	// Child GoFaster instance data
 	Children map[string]*Snapshot `json:"_children,omitempty"`
