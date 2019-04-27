@@ -1,25 +1,26 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/mreithub/go-faster/faster"
+	"github.com/mreithub/go-faster/web"
 )
 
 func indexHTML(w http.ResponseWriter, r *http.Request) {
-	ref := faster.Ref("/")
+	ref := faster.GetInstance("http").Ref(r.Method + " /")
 	defer ref.Deref()
 
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
-  <a href="/faster.json">faster.json</a>`))
+  <a href="/_faster/">GoFaster dashboard</a>`))
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {
-	ref := faster.Ref("/delayed.html")
+	ref := faster.GetInstance("http").Ref(r.Method + " /delayed.html")
 	defer ref.Deref()
 
 	time.Sleep(200 * time.Millisecond)
@@ -27,20 +28,13 @@ func delayedHTML(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func fasterJSON(w http.ResponseWriter, r *http.Request) {
-	ref := faster.Ref("/faster.json")
-	defer ref.Deref()
-
-	data, _ := json.MarshalIndent(faster.GetSnapshot().Data, "", "  ")
-
-	w.Header().Add("Content-type", "application/json")
-	w.Write(data)
-}
-
 func main() {
 	http.HandleFunc("/", indexHTML)
 	http.HandleFunc("/delayed.html", delayedHTML)
-	http.HandleFunc("/faster.json", fasterJSON)
+	http.Handle("/_faster/", web.NewHandler("/_faster/", faster.Singleton))
 
-	http.ListenAndServe("localhost:1234", nil)
+	var addr = "localhost:1234"
+	log.Printf("starting web server at '%s'", addr)
+	log.Printf(" - go to 'http://%s/_faster/' for the dashboard", addr)
+	http.ListenAndServe(addr, nil)
 }
