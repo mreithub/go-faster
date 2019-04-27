@@ -10,32 +10,29 @@ body {
   font-family: monospace;
 }
 
-td {
-  text-align: right;
-}
-tr>td {
-  text-align: initial;
-}
+th { padding-left: 1em;}
+
+td { text-align: right; }
+td:first-child { text-align: initial; }
 </style>
 </head>
 <body>
 <table>
   <thead><tr>
     <th>Name</th>
-    <th title="number of currently running instances">Active</th>
-    <th title="number of finished instances">Count</th>
-    <th title="total time spent">Total Time</th>
-    <th title="average time spent">Average Time</th>
+    <th title="number of currently running instances">active</th>
+    <th title="number of finished instances">count</th>
+    <th title="total time spent">total ms</th>
+    <th title="average time spent">average ms</th>
   </tr></thead>
   <tbody>
     {{range .data}}
-    <tr data-path="{{.Path}}">
-      <td><span style="color: #aaa">
-        {{range .Path}}{{.}}.{{end}}</span>{{.Name}}</td>
+    <tr data-path="{{.JSONPath}}">
+      <td>{{range .Path}}&nbsp;&nbsp;{{end}}{{.Name}}</td>
       <td>{{or .Data.Active ""}}</td>
       <td>{{or .Data.Count ""}}</td>
-      <td data-raw="{{printf "%d" .Data.Duration}}">{{or .Data.Duration ""}}</td>
-      <td data-raw="{{printf "%d" .Data.Average}}">{{or .Data.Average ""}}</td>
+      <td data-raw="{{printf "%d" .Data.Duration}}">{{.PrettyTotal}}</td>
+      <td data-raw="{{printf "%d" .Data.Average}}">{{.PrettyAverage}}</td>
     </tr>
     {{end}}
   </tbody>

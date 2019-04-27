@@ -1,7 +1,11 @@
 package web
 
 import (
+	"encoding/json"
+	"fmt"
 	"sort"
+	"strconv"
+	"time"
 
 	"github.com/mreithub/go-faster/faster"
 )
@@ -10,6 +14,37 @@ type entry struct {
 	Name string
 	Path []string
 	Data *faster.Snapshot
+}
+
+func (e *entry) JSONPath() string {
+	var rc, _ = json.Marshal(append(e.Path, e.Name))
+	return string(rc)
+}
+
+// formats a time.Duration as string (in msec) that can be easily parsed by the human eye when aligned right
+func (e *entry) toMsec(value time.Duration) string {
+	var mantissa = (value / time.Microsecond / 10) % 100 // two digits after the decimal point
+
+	var unformatted = []rune(strconv.FormatInt(int64(value/time.Millisecond), 10))
+	var formatted = make([]rune, 0, 3+int(float32(len(unformatted))*1.3))
+	formatted = append(formatted, unformatted[:len(unformatted)%3]...)
+	for i := len(unformatted) % 3; i < len(unformatted); i += 3 {
+		if len(formatted) > 0 {
+			formatted = append(formatted, ' ')
+		}
+		formatted = append(formatted, unformatted[i:i+3]...)
+	}
+
+	return fmt.Sprintf("%s.%02d", string(formatted), mantissa)
+}
+
+// PrettyAverage -- returns the average in msec (with space as thousands-separator)
+func (e *entry) PrettyAverage() string {
+	return e.toMsec(e.Data.Average)
+}
+
+func (e *entry) PrettyTotal() string {
+	return e.toMsec(e.Data.Duration)
 }
 
 func flattenSnapshot(snap *faster.Snapshot) []entry {
