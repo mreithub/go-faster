@@ -10,13 +10,13 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/mreithub/goref"
+	faster "github.com/mreithub/go-faster"
 )
 
 func indexHTML(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
-  <a href="/goref.json">goref.json</a>`))
+  <a href="/faster.json">faster.json</a>`))
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {
@@ -30,8 +30,8 @@ func processStuff(name string) chan string {
 	rc := make(chan string)
 
 	go func() {
-		// since processing takes some time, we'll add a separate GoRef instance here (this time in the "app" scope)
-		r := goref.GetInstance("app").Ref("processing")
+		// since processing takes some time, we'll add a separate GoFaster instance here (this time in the "app" scope)
+		r := faster.GetInstance("app").Ref("processing")
 		defer r.Deref()
 
 		time.Sleep(200 * time.Millisecond)
@@ -41,17 +41,17 @@ func processStuff(name string) chan string {
 	return rc
 }
 
-func gorefJSON(w http.ResponseWriter, r *http.Request) {
-	data, _ := json.MarshalIndent(goref.GetSnapshot(), "", "  ")
+func fasterJSON(w http.ResponseWriter, r *http.Request) {
+	data, _ := json.MarshalIndent(faster.GetSnapshot(), "", "  ")
 
 	w.Header().Add("Content-type", "application/json")
 	w.Write(data)
 }
 
 func trackRequests(router *mux.Router) http.Handler {
-	g := goref.GetInstance("http")
+	g := faster.GetInstance("http")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Try to find the matching HTTP route (we'll use that as GoRef key)
+		// Try to find the matching HTTP route (we'll use that as GoFaster key)
 		var match mux.RouteMatch
 		if router.Match(r, &match) {
 			path, _ := match.Route.GetPathTemplate()
@@ -72,7 +72,7 @@ func main() {
 
 	r.HandleFunc("/", indexHTML)
 	r.HandleFunc("/delayed.html", delayedHTML)
-	r.HandleFunc("/goref.json", gorefJSON)
+	r.HandleFunc("/faster.json", fasterJSON)
 
 	var handler = handlers.LoggingHandler(os.Stdout, trackRequests(r))
 	log.Fatal(http.ListenAndServe("localhost:1234", handler))

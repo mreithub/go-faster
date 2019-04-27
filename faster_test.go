@@ -1,4 +1,4 @@
-package goref
+package faster
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestBasics(t *testing.T) {
-	g := NewGoRef()
+	g := New()
 
 	g.Ref("hello").Deref()
 

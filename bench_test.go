@@ -1,4 +1,4 @@
-package goref
+package faster
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func BenchmarkMeasureTime(b *testing.B) {
 
 // BenchmarkRefDeref -- Measures how long an empty Ref().Deref() call takes
 func BenchmarkRefDeref(b *testing.B) {
-	g := NewGoRef()
+	g := New()
 
 	for n := 0; n < b.N; n++ {
 		g.Ref("hello").Deref()
@@ -33,7 +33,7 @@ func BenchmarkRefDeref(b *testing.B) {
 
 // BenchmarkRefDeref -- Measures how long an empty Ref().Deref() call takes (doing the Deref() in a defer statement)
 func BenchmarkRefDerefDeferred(b *testing.B) {
-	g := NewGoRef()
+	g := New()
 
 	for n := 0; n < b.N; n++ {
 		r := g.Ref("hello")
@@ -47,7 +47,7 @@ func BenchmarkRefDerefDeferred(b *testing.B) {
 // benchmarkGetSnapshot -- Measure how long it takes to create a deep copy of the snapshot data
 func benchmarkGetSnapshot(count int, b *testing.B) {
 	// setup
-	g := NewGoRef()
+	g := New()
 	for n := 0; n < count; n++ {
 		g.Ref(fmt.Sprintf("ref%d", n)).Deref()
 	}

@@ -1,20 +1,18 @@
-# GoRef - Simple (and fast) go-style invocation tracker
+# GoFaster - Find bottlenecks in production Go Apps
 
-[![Build Status](https://travis-ci.org/mreithub/goref.svg?branch=master)](https://travis-ci.org/mreithub/goref)
+[![Build Status](https://travis-ci.org/mreithub/faster.svg?branch=master)](https://travis-ci.org/mreithub/faster)
 
-GoRef is a small [Go][golang] package which implements a simple key-based
-method invocation counter and timing profiler.
 
 It can be used to:
-- track execution time of your functions/goroutines
+- track execution time of individual functions/goroutines
 - find bottlenecks in your code
 - Check if your goroutines exit properly
 - Track calls to your HTTP endpoints (and their execution time) - see below
 
 To access the internal profiling data, use `GetSnapshot()`.
-It'll ask the worker goroutine to create a deep copy of the GoRef's instance current state.
+It'll ask the worker goroutine to create a deep copy of Faster's instance current state.
 
-GoRef's code is thread safe. It uses a messaging channel read by a single worker goroutine
+GoFaster's code is thread safe. It uses a messaging channel read by a single worker goroutine
 which does the heavy lifting.  
 Calls to `Ref()` and `Deref()` are asynchronous
 (that asynchronousity doesn't affect time measurement though).  
@@ -25,21 +23,21 @@ Calls to `Ref()` and `Deref()` are asynchronous
 
 Download the package, e.g.:
 
-    go get github.com/mreithub/goref
+    go get github.com/mreithub/go-faster
 
 Add the following snippet to each function (or goroutine) you want to track
 (and replace 'foo' with your own key names).
 
 ```go
-ref := goref.Ref("foo"); defer ref.Deref()
+ref := faster.Ref("foo"); defer ref.Deref()
 ```
 
-The above snippet uses `GoRef` in singleton mode. But you can also create your
-own `GoRef` instances (and e.g. use different ones in different parts of your
+The above snippet uses `GoFaster` in singleton mode. But you can also create your
+own `GoFaster` instances (and e.g. use different ones in different parts of your
 application):
 
 ```go
-g := goref.NewGoRef()
+g := faster.New()
 
 // and then instead of the above snippet:
 ref := g.Ref("foo"); defer ref.Deref()
@@ -52,37 +50,37 @@ At any point in time you can call `GetSnapshot()` to obtain a deep copy of the m
 
 ### Scoped measurements
 
-GoRef not only supports independent `GoRef` instances but also has a scope hierarchy (or tree structure
+GoFaster not only supports independent `Faster` instances but also has a scope hierarchy (or tree structure
 if you will).
 
-With `goref.GetInstance(path ...string)` you can get a specific child of the global singleton instance.
+With `faster.GetInstance(path ...string)` you can get a specific child of the global singleton instance.
 
 An example use case would be seperate, possibly nested instances for different parts of your application
-(e.g. `goref.GetInstance("http")` for HTTP endpoint handlers, `goref.GetInstance("dao", "psql")` for the PostgreSQL based DAO, ...)
+(e.g. `faster.GetInstance("http")` for HTTP endpoint handlers, `faster.GetInstance("dao", "psql")` for the PostgreSQL based DAO, ...)
 
-You can see a simple example of GoRef scopes in action in the *gorilla-mux* example below (or in the `examples/gorillamux/` directory)
+You can see a simple example of GoFaster scopes in action in the *gorilla-mux* example below (or in the `examples/gorillamux/` directory)
 
 
 
 ## Example (excerpt from [webserver.go](examples/webserver/webserver.go)):
 
-This example shows how to use GoRef in your web applications.  
+This example shows how to use GoFaster in your web applications.  
 Here it tracks all web handler invocations.
 
 Have a look at the usage documentation at [godoc.org][godoc].
 
 ```go
 func indexHTML(w http.ResponseWriter, r *http.Request) {
-	ref := goref.Ref("/")
+	ref := faster.Ref("/")
 	defer ref.Deref()
 
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
-  <a href="/goref.json">goref.json</a>`))
+  <a href="/faster.json">faster.json</a>`))
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {
-	ref := goref.Ref("/hello.html")
+	ref := faster.Ref("/hello.html")
 	defer ref.Deref()
 
 	time.Sleep(200 * time.Millisecond)
@@ -90,11 +88,11 @@ func delayedHTML(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func gorefJSON(w http.ResponseWriter, r *http.Request) {
-	ref := goref.Ref("/goref.json")
+func fasterJSON(w http.ResponseWriter, r *http.Request) {
+	ref := faster.Ref("/faster.json")
 	defer ref.Deref()
 
-	data, _ := json.Marshal(goref.GetSnapshot().Data)
+	data, _ := json.Marshal(faster.GetSnapshot().Data)
 
 	w.Header().Add("Content-type", "application/json")
 	w.Write(data)
@@ -103,7 +101,7 @@ func gorefJSON(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", indexHTML)
 	http.HandleFunc("/delayed.html", delayedHTML)
-	http.HandleFunc("/goref.json", gorefJSON)
+	http.HandleFunc("/faster.json", fasterJSON)
 
 	http.ListenAndServe("localhost:1234", nil)
 }
@@ -115,7 +113,7 @@ Run it with
 
 and browse to http://localhost:1234/
 
-After accessing each page a couple of times `/goref.json` should look something
+After accessing each page a couple of times `/faster.json` should look something
 like this:
 
 ```json
@@ -132,7 +130,7 @@ like this:
     "duration": 811560843,
     "avgMsec": 202.89021
   },
-  "/goref.json": {
+  "/faster.json": {
     "active": 1,
     "count": 6,
     "duration": 443599,
@@ -151,20 +149,20 @@ like this:
 ## Using [`gorilla-mux`][gorillamux]
 
 If you're using [gorilla-mux][gorillamux], there's a simple way to
-add GoRef to your project:
+add GoFaster to your project:
 
 (taken from the example in `examples/gorillamux/`)
 
 ```go
 func trackRequests(router *mux.Router) http.Handler {
   return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    // Try to find the matching HTTP route (we'll use that as GoRef key)
+    // Try to find the matching HTTP route (we'll use that as GoFaster key)
     var match mux.RouteMatch
     if router.Match(r, &match) {
       path, _ := match.Route.GetPathTemplate()
       path = fmt.Sprintf("%s %s", r.Method, path)
 
-      ref := goref.Ref(path)
+      ref := faster.Ref(path)
       router.ServeHTTP(w, r)
       ref.Deref()
     } else {
@@ -185,7 +183,7 @@ var handler = handlers.LoggingHandler(os.Stdout, trackRequests(router))
 log.Fatal(http.ListenAndServe(addr, handler))
 ```
 
-You'll get GoRef data looking something like this:
+You'll get GoFaster data looking something like this:
 
 ```json
 {
@@ -215,7 +213,7 @@ You'll get GoRef data looking something like this:
           "duration": 2233380060,
           "avgMsec": 203.03455
         },
-        "GET /goref.json": {
+        "GET /faster.json": {
           "active": 1,
           "count": 4,
           "duration": 2025613,
@@ -235,7 +233,7 @@ Requests matched by the same gorilla-mux route will be grouped together.
 
 ## Performance impact
 
-GoRef aims to have as little impact on your application's performance as possible.
+GoFaster aims to have as little impact on your application's performance as possible.
 
 That's why all the processing is done asynchronously in a separate goroutine.
 
@@ -243,7 +241,7 @@ In a benchmark run on my laptop, this typical ref counter snippet takes around
 a microsecond to run:
 
 ```go
-r := goref.Ref(); defer r.Deref()
+r := faster.Ref(); defer r.Deref()
 ```
 
 Interestingly, things are a lot faster if we don't use `defer`
@@ -257,14 +255,14 @@ BenchmarkRefDerefDeferred-4   	 1000000	      1124 ns/op
 BenchmarkGetSnapshot100-4     	  100000	     12367 ns/op
 BenchmarkGetSnapshot1000-4    	   10000	    127117 ns/op
 PASS
-ok  	github.com/mreithub/goref	7.605s
+ok  	github.com/mreithub/faster	7.605s
 ```
 
 - `BenchmarkMeasureTime()` measures the cost of calling time.Now() twice and calculating the nanoseconds between them
-- `BenchmarkRefDeref()` calls `goref.Ref("hello").Deref()` directly (without using `defer`)
+- `BenchmarkRefDeref()` calls `faster.Ref("hello").Deref()` directly (without using `defer`)
 - `BenchmarkRefDerefDeferred()` uses `defer` (as in the snippet above)
-- `BenchmarkGetSnapshot*()` measure the time it takes to take a snapshot of a GoRef instance with 100 and 1000 entries (= different keys) respectively
+- `BenchmarkGetSnapshot*()` measure the time it takes to take a snapshot of a GoFaster instance with 100 and 1000 entries (= different keys) respectively
 
 [golang]: https://golang.org/
-[godoc]: https://godoc.org/github.com/mreithub/goref
+[godoc]: https://godoc.org/github.com/mreithub/faster
 [gorillamux]: https://github.com/gorilla/mux

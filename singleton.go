@@ -1,10 +1,10 @@
-package goref
+package faster
 
 // singleton GoRef instance
-var instance = NewGoRef()
+var instance = New()
 
 // GetInstance -- Returns a scoped instance (matching the given scope path)
-func GetInstance(path ...string) *GoRef {
+func GetInstance(path ...string) *Faster {
 	return instance.GetChild(path...)
 }
 

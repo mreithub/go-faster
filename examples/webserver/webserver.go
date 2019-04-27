@@ -6,20 +6,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mreithub/goref"
+	faster "github.com/mreithub/go-faster"
 )
 
 func indexHTML(w http.ResponseWriter, r *http.Request) {
-	ref := goref.Ref("/")
+	ref := faster.Ref("/")
 	defer ref.Deref()
 
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
-  <a href="/goref.json">goref.json</a>`))
+  <a href="/faster.json">faster.json</a>`))
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {
-	ref := goref.Ref("/delayed.html")
+	ref := faster.Ref("/delayed.html")
 	defer ref.Deref()
 
 	time.Sleep(200 * time.Millisecond)
@@ -27,11 +27,11 @@ func delayedHTML(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func gorefJSON(w http.ResponseWriter, r *http.Request) {
-	ref := goref.Ref("/goref.json")
+func fasterJSON(w http.ResponseWriter, r *http.Request) {
+	ref := faster.Ref("/faster.json")
 	defer ref.Deref()
 
-	data, _ := json.MarshalIndent(goref.GetSnapshot().Data, "", "  ")
+	data, _ := json.MarshalIndent(faster.GetSnapshot().Data, "", "  ")
 
 	w.Header().Add("Content-type", "application/json")
 	w.Write(data)
@@ -40,7 +40,7 @@ func gorefJSON(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", indexHTML)
 	http.HandleFunc("/delayed.html", delayedHTML)
-	http.HandleFunc("/goref.json", gorefJSON)
+	http.HandleFunc("/faster.json", fasterJSON)
 
 	http.ListenAndServe("localhost:1234", nil)
 }

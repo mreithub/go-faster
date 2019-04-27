@@ -1,4 +1,4 @@
-package goref
+package faster
 
 import (
 	"sync"
@@ -8,7 +8,7 @@ import (
 // TODO tracking execution time might cause performance issues (e.g. in virtualized environments gettimeofday() might be slow)
 //   if that turns out to be the case, deactivate Data.TotalNsec
 
-// data -- internal GoRef data structure
+// data -- internal GoFaster data structure
 type data struct {
 	// currently active invocations
 	active int32
@@ -20,9 +20,9 @@ type data struct {
 
 // event types (for internal communication):
 const (
-	// stop the goroutine handling this GoRef instance
+	// stop the goroutine handling this GoFaster instance
 	evStop = iota
-	// resets this GoRef instance
+	// resets this GoFaster instance
 	evReset = iota
 	// Takes a snapshot and sends it to snapshotChannel
 	evSnapshot = iota
@@ -38,21 +38,21 @@ type event struct {
 	nsec int64
 }
 
-// GoRef -- A simple, go-style key-based reference counter that can be used for profiling your application (main class)
-type GoRef struct {
+// Faster -- A simple, go-style key-based reference counter that can be used for profiling your application (main class)
+type Faster struct {
 	name   string
-	parent *GoRef
+	parent *Faster
 
 	data map[string]*data
 
-	_children map[string]*GoRef
+	_children map[string]*Faster
 	childLock sync.Mutex
 
 	evChannel       chan event
 	snapshotChannel chan Snapshot
 }
 
-func (g *GoRef) do(evType int, key string, nsec int64) {
+func (g *Faster) do(evType int, key string, nsec int64) {
 	g.evChannel <- event{
 		typ:  evType,
 		key:  key,
@@ -61,7 +61,7 @@ func (g *GoRef) do(evType int, key string, nsec int64) {
 }
 
 // get -- Get the Data object for the specified key (or create it) - thread safe
-func (g *GoRef) get(key string) *data {
+func (g *Faster) get(key string) *data {
 	rc, ok := g.data[key]
 	if !ok {
 		rc = &data{}
@@ -72,7 +72,7 @@ func (g *GoRef) get(key string) *data {
 }
 
 // Ref -- References an instance of 'key'
-func (g *GoRef) Ref(key string) *Instance {
+func (g *Faster) Ref(key string) *Instance {
 	g.do(evRef, key, 0)
 
 	return &Instance{
@@ -82,9 +82,9 @@ func (g *GoRef) Ref(key string) *Instance {
 	}
 }
 
-func (g *GoRef) run() {
+func (g *Faster) run() {
 	for msg := range g.evChannel {
-		//log.Print("~~goref: ", msg)
+		//log.Print("~~gofaster: ", msg)
 		switch msg.typ {
 		case evRef:
 			g.get(msg.key).active++
@@ -102,22 +102,22 @@ func (g *GoRef) run() {
 			g.data = map[string]*data{}
 			break
 		case evStop:
-			return // TODO stop this GoRef instance safely
+			return // TODO stop this GoFaster instance safely
 		default:
-			panic("unsupported GoRef event type")
+			panic("unsupported GoFaster event type")
 		}
 	}
 }
 
 // GetChild -- Gets (or creates) a specific child instance (recursively)
-func (g *GoRef) GetChild(path ...string) *GoRef {
+func (g *Faster) GetChild(path ...string) *Faster {
 	if len(path) == 0 {
 		return g
 	}
 
 	firstSegment := path[0]
 
-	var child *GoRef
+	var child *Faster
 	{ // keep the lock as short as possible
 		g.childLock.Lock()
 		defer g.childLock.Unlock()
@@ -126,7 +126,7 @@ func (g *GoRef) GetChild(path ...string) *GoRef {
 		child, ok = g._children[firstSegment]
 		if !ok {
 			// create a new child transparently
-			child = newGoRef(firstSegment, g)
+			child = newFaster(firstSegment, g)
 			g._children[firstSegment] = child
 		}
 	}
@@ -134,13 +134,13 @@ func (g *GoRef) GetChild(path ...string) *GoRef {
 	return child.GetChild(path[1:]...)
 }
 
-// GetChildren -- Creates a point-in-time copy of this GoRef instance's children
-func (g *GoRef) GetChildren() map[string]*GoRef {
+// GetChildren -- Creates a point-in-time copy of this GoFaster instance's children
+func (g *Faster) GetChildren() map[string]*Faster {
 	g.childLock.Lock()
 	defer g.childLock.Unlock()
 
 	// simply copy all entries
-	var rc = make(map[string]*GoRef, len(g._children))
+	var rc = make(map[string]*Faster, len(g._children))
 	for name, child := range g._children {
 		rc[name] = child
 	}
@@ -148,13 +148,13 @@ func (g *GoRef) GetChildren() map[string]*GoRef {
 	return rc
 }
 
-// GetParent -- Get the parent of this GoRef instance (will return nil for root instances)
-func (g *GoRef) GetParent() *GoRef {
+// GetParent -- Get the parent of this GoFaster instance (will return nil for root instances)
+func (g *Faster) GetParent() *Faster {
 	// g.parent is immutable -> no locking necessary
 	return g.parent
 }
 
-// GetPath -- Get this GoRef instance's path (i.e. its parents' and its own name)
+// GetPath -- Get this GoFaster instance's path (i.e. its parents' and its own name)
 //
 // Root instances have empty names, all the others have the name you give them
 // when creating them with GetChild().
@@ -164,10 +164,10 @@ func (g *GoRef) GetParent() *GoRef {
 // ```go
 // strings.Join(g.GetPath(), "/")
 // ```
-func (g *GoRef) GetPath() []string {
+func (g *Faster) GetPath() []string {
 	var rc []string
 	// this method needs no thread safety mechanisms.
-	// A GoRef's name and parent are immutable.
+	// A GoFaster's name and parent are immutable.
 	if g.parent != nil {
 		rc = append(g.parent.GetPath(), g.name)
 	}
@@ -176,7 +176,7 @@ func (g *GoRef) GetPath() []string {
 }
 
 // GetSnapshot -- Creates and returns a deep copy of the current state (including child instance states)
-func (g *GoRef) GetSnapshot() Snapshot {
+func (g *Faster) GetSnapshot() Snapshot {
 	g.do(evSnapshot, "", 0)
 
 	// get child snapshots while we wait
@@ -193,7 +193,7 @@ func (g *GoRef) GetSnapshot() Snapshot {
 }
 
 // takeSnapshot -- internal (-> thread-unsafe) method taking a deep copy of the current state and sending it to snapshotChannel
-func (g *GoRef) takeSnapshot() {
+func (g *Faster) takeSnapshot() {
 	// copy entries
 	data := make(map[string]Data, len(g.data))
 	for key, d := range g.data {
@@ -207,22 +207,22 @@ func (g *GoRef) takeSnapshot() {
 	}
 }
 
-// Reset -- Resets this GoRef instance to its initial state
-func (g *GoRef) Reset() {
+// Reset -- Resets this GoFaster instance to its initial state
+func (g *Faster) Reset() {
 	g.do(evReset, "", 0)
 }
 
-// NewGoRef -- Construct a new root-level GoRef instance
-func NewGoRef() *GoRef {
-	return newGoRef("", nil)
+// New -- Construct a new root-level GoFaster instance
+func New() *Faster {
+	return newFaster("", nil)
 }
 
-func newGoRef(name string, parent *GoRef) *GoRef {
-	rc := &GoRef{
+func newFaster(name string, parent *Faster) *Faster {
+	rc := &Faster{
 		name:            name,
 		parent:          parent,
 		data:            map[string]*data{},
-		_children:       map[string]*GoRef{},
+		_children:       map[string]*Faster{},
 		evChannel:       make(chan event, 100),
 		snapshotChannel: make(chan Snapshot, 5),
 	}

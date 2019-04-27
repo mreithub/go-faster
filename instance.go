@@ -1,4 +1,4 @@
-package goref
+package faster
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 
 // Instance - Trackable instance
 type Instance struct {
-	parent    *GoRef
+	parent    *Faster
 	key       string
 	startTime time.Time
 }

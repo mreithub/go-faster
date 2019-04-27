@@ -1,4 +1,4 @@
-package goref
+package faster
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetChild(t *testing.T) {
-	g := NewGoRef()
+	g := New()
 
 	assert.Equal(t, g, g.GetChild()) // empty parameters -> return itself
 
