@@ -8,10 +8,10 @@ import (
 )
 
 func TestSingleton(t *testing.T) {
-	Ref("hello").Deref()
-	ref := Ref("world")
+	Track("hello").Done()
+	ref := Track("world")
 	snap1 := GetSnapshot()
-	ref.Deref()
+	ref.Done()
 	snap2 := GetSnapshot()
 
 	// current state
@@ -26,7 +26,7 @@ func TestSingleton(t *testing.T) {
 
 	// reset instance
 	Reset()
-	Ref("bla").Deref()
+	Track("bla").Done()
 
 	GetSnapshot() // synchronize
 
@@ -37,7 +37,7 @@ func TestSingleton(t *testing.T) {
 	// check Snapshot data after the fact
 	//
 
-	// snap1: Ref('hello'), Deref('hello'), Ref('world')
+	// snap1: Track('hello'), Done('hello'), Track('world')
 	d1 := snap1.Children["hello"]
 	assert.Equal(t, int32(0), d1.Active)
 	assert.Equal(t, int64(1), d1.Count)
@@ -47,7 +47,7 @@ func TestSingleton(t *testing.T) {
 	assert.Equal(t, time.Duration(0), d2.Duration)
 	assert.Equal(t, 2, len(snap1.Children))
 
-	// snap2: snap1 + Deref('world')
+	// snap2: snap1 + Done('world')
 	d1 = snap2.Children["hello"]
 	assert.Equal(t, int32(0), d1.Active)
 	assert.Equal(t, int64(1), d1.Count)

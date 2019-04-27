@@ -19,25 +19,25 @@ func BenchmarkMeasureTime(b *testing.B) {
 
 }
 
-// BenchmarkRefDeref -- Measures how long an empty Ref().Deref() call takes
-func BenchmarkRefDeref(b *testing.B) {
+// BenchmarkTrackDone -- Measures how long an empty Track().Done() call takes
+func BenchmarkTrackDone(b *testing.B) {
 	g := New()
 
 	for n := 0; n < b.N; n++ {
-		g.Ref("hello").Deref()
+		g.Track("hello").Done()
 	}
 	//snap := g.Clone()
 	//j, _ := json.Marshal(snap.Data)
 	//log.Printf("data: %s", j)
 }
 
-// BenchmarkRefDeref -- Measures how long an empty Ref().Deref() call takes (doing the Deref() in a defer statement)
-func BenchmarkRefDerefDeferred(b *testing.B) {
+// BenchmarkTrackDoneDeferred -- Measures how long an empty Track().Done() call takes (doing the Done() in a defer statement)
+func BenchmarkTrackDoneDeferred(b *testing.B) {
 	g := New()
 
 	for n := 0; n < b.N; n++ {
-		r := g.Ref("hello")
-		defer r.Deref()
+		r := g.Track("hello")
+		defer r.Done()
 	}
 	//snap := g.Clone()
 	//j, _ := json.Marshal(snap.Data)
@@ -49,7 +49,7 @@ func benchmarkGetSnapshot(count int, b *testing.B) {
 	// setup
 	g := New()
 	for n := 0; n < count; n++ {
-		g.Ref(fmt.Sprintf("ref%d", n)).Deref()
+		g.Track(fmt.Sprintf("ref%d", n)).Done()
 	}
 
 	for n := 0; n < b.N; n++ {

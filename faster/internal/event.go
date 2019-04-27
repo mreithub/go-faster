@@ -14,10 +14,10 @@ const (
 	// EvSnapshot -- Takes a snapshot and sends it to snapshotChannel
 	EvSnapshot EventType = iota
 
-	// EvRef -- increments a ref counter
-	EvRef EventType = iota
-	// EvDeref -- deref a ref counter (and updates the total count + time)
-	EvDeref EventType = iota
+	// EvTrack -- increments a ref counter
+	EvTrack EventType = iota
+	// EvDone -- deref a ref counter (and updates the total count + time)
+	EvDone EventType = iota
 )
 
 // Event -- internal events

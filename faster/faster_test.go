@@ -10,16 +10,16 @@ import (
 func TestBasics(t *testing.T) {
 	g := New()
 
-	g.Ref("hello").Deref()
+	g.Track("hello").Done()
 
 	clone1 := g.GetSnapshot()
-	ref := g.Ref("world")
+	ref := g.Track("world")
 	time.Sleep(100 * time.Millisecond)
 	clone2 := g.GetSnapshot()
-	ref.Deref()
-	ref = g.Ref("hello")
+	ref.Done()
+	ref = g.Track("hello")
 	clone3 := g.GetSnapshot()
-	ref.Deref()
+	ref.Done()
 
 	// all the assertions are done after the fact (to make sure the different clones
 	// keep their own copies of the Data)
@@ -38,7 +38,7 @@ func TestBasics(t *testing.T) {
 	assert.Equal(t, int64(1), d.Count)
 	assert.True(t, d.TotalTime >= 100000000)
 
-	// clone1: Ref('hello'), Deref('hello')
+	// clone1: Track('hello'), Done('hello')
 	keys := clone1.Keys()
 	assert.Contains(t, keys, "hello")
 	assert.NotContains(t, keys, "world")
@@ -48,7 +48,7 @@ func TestBasics(t *testing.T) {
 	assert.True(t, d1.Duration > 0)
 	assert.Equal(t, 1, len(clone1.Children))
 
-	// clone2: clone1 + Ref('world'),  sleep(100ms)
+	// clone2: clone1 + Track('world'),  sleep(100ms)
 	keys = clone2.Keys()
 	assert.Contains(t, keys, "hello")
 	assert.Contains(t, keys, "world")
@@ -57,7 +57,7 @@ func TestBasics(t *testing.T) {
 	assert.Equal(t, int64(0), d2.Count)
 	assert.Equal(t, time.Duration(0), d2.Duration)
 
-	// clone3: clone2 + Deref('world'), Ref('hello')
+	// clone3: clone2 + Done('world'), Track('hello')
 	keys = clone3.Keys()
 	assert.Contains(t, keys, "hello")
 	assert.Contains(t, keys, "world")

@@ -11,8 +11,8 @@ import (
 )
 
 func indexHTML(w http.ResponseWriter, r *http.Request) {
-	ref := faster.Ref("http", r.Method+" /")
-	defer ref.Deref()
+	ref := faster.Track("http", r.Method+" /")
+	defer ref.Done()
 
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
@@ -20,8 +20,8 @@ func indexHTML(w http.ResponseWriter, r *http.Request) {
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {
-	ref := faster.Ref("http", r.Method+" /delayed.html")
-	defer ref.Deref()
+	ref := faster.Track("http", r.Method+" /delayed.html")
+	defer ref.Done()
 
 	time.Sleep(200 * time.Millisecond)
 	msg := fmt.Sprintf("The time is %s", time.Now().String())

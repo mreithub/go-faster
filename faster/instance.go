@@ -14,10 +14,10 @@ type Instance struct {
 	startTime time.Time
 }
 
-// Deref -- Dereference an instance of 'key'
-func (i *Instance) Deref() {
+// Done -- Dereference an instance of 'key'
+func (i *Instance) Done() {
 	if i.parent == nil {
-		log.Print("GoFaster warning: possible double Deref()")
+		log.Print("GoFaster warning: possible double Done()")
 		return
 	}
 
@@ -29,6 +29,6 @@ func (i *Instance) Deref() {
 		took = now.Sub(i.startTime)
 	}
 
-	i.parent.do(internal.EvDeref, i.path, took)
-	i.parent = nil // prevent double Deref()
+	i.parent.do(internal.EvDone, i.path, took)
+	i.parent = nil // prevent double Done()
 }

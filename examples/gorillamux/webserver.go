@@ -32,8 +32,8 @@ func processStuff(name string) chan string {
 
 	go func() {
 		// since processing takes some time, we'll add a separate GoFaster instance here (this time in the "app" scope)
-		r := faster.Ref("app", "processing")
-		defer r.Deref()
+		r := faster.Track("app", "processing")
+		defer r.Done()
 
 		time.Sleep(200 * time.Millisecond)
 		rc <- fmt.Sprintf("Hello %s", name)
@@ -57,9 +57,9 @@ func trackRequests(router *mux.Router) http.Handler {
 			path, _ := match.Route.GetPathTemplate()
 			path = fmt.Sprintf("%s %s", r.Method, path)
 
-			ref := faster.Ref("http", path)
+			ref := faster.Track("http", path)
 			router.ServeHTTP(w, r)
-			ref.Deref()
+			ref.Done()
 		} else {
 			// No route found (-> 404 error)
 			router.ServeHTTP(w, r)
@@ -68,14 +68,17 @@ func trackRequests(router *mux.Router) http.Handler {
 }
 
 func main() {
+	// setup http mux and loggin
 	var r = mux.NewRouter()
-
 	r.HandleFunc("/", indexHTML)
 	r.HandleFunc("/delayed.html", delayedHTML)
 	r.PathPrefix("/_faster/").Handler(web.NewHandler("/_faster/", faster.Singleton))
-
 	var handler = handlers.LoggingHandler(os.Stdout, trackRequests(r))
 
+	// set up periodic go-faster snapshots
+	faster.SetTicker("1sec", 1*time.Second, 120) // 2min
+
+	// start web server
 	var addr = "localhost:1234"
 	log.Printf("starting web server at '%s'", addr)
 	log.Printf(" - go to 'http://%s/_faster/' for the dashboard", addr)

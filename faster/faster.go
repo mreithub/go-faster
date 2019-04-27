@@ -53,9 +53,9 @@ func (g *Faster) SetTicker(name string, interval time.Duration, keep int) {
 	g.tickers[name] = internal.NewPeriodic(name, interval, keep, g.tickChan)
 }
 
-// Ref -- References an instance of 'key'
-func (g *Faster) Ref(key ...string) *Instance {
-	g.do(internal.EvRef, key, 0)
+// Track -- Tracks an instance of 'key'
+func (g *Faster) Track(key ...string) *Instance {
+	g.do(internal.EvTrack, key, 0)
 
 	return &Instance{
 		parent:    g,
@@ -70,9 +70,9 @@ func (g *Faster) run() {
 		case msg := <-g.evChannel:
 			//log.Print("~~gofaster: ", msg)
 			switch msg.Type {
-			case internal.EvRef:
+			case internal.EvTrack:
 				g.root.GetChild(msg.Path...).Active++
-			case internal.EvDeref:
+			case internal.EvDone:
 				d := g.root.GetChild(msg.Path...)
 				d.Active--
 				d.Count++
