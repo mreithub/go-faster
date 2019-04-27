@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	faster "github.com/mreithub/go-faster"
+	"github.com/mreithub/go-faster/faster"
 )
 
 func indexHTML(w http.ResponseWriter, r *http.Request) {

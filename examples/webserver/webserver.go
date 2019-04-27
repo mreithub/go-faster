@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	faster "github.com/mreithub/go-faster"
+	"github.com/mreithub/go-faster/faster"
 )
 
 func indexHTML(w http.ResponseWriter, r *http.Request) {

@@ -2,9 +2,9 @@ package faster
 
 import "time"
 
-// Snapshot -- point-in-time copy of a GoRef instance
+// Snapshot -- point-in-time copy of a GoFaster instance
 type Snapshot struct {
-	// Child GoRef instance data
+	// Child GoFaster instance data
 	Children map[string]Snapshot `json:"_children,omitempty"`
 
 	// Snapshot data
