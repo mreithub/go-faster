@@ -15,7 +15,7 @@ type Instance struct {
 // Deref -- Dereference an instance of 'key'
 func (i *Instance) Deref() {
 	if i.parent == nil {
-		log.Print("GoRef warning: possible double Deref()")
+		log.Print("GoFaster warning: possible double Deref()")
 		return
 	}
 

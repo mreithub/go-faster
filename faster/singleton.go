@@ -1,24 +1,24 @@
 package faster
 
-// singleton GoRef instance
-var instance = New()
+// Singleton -- global GoFaster instance
+var Singleton = New()
 
 // GetInstance -- Returns a scoped instance (matching the given scope path)
 func GetInstance(path ...string) *Faster {
-	return instance.GetChild(path...)
+	return Singleton.GetChild(path...)
 }
 
-// GetSnapshot -- Returns a Snapshot of the GoRef  (synchronously)
+// GetSnapshot -- Returns a Snapshot of the GoFaster (synchronously)
 func GetSnapshot() Snapshot {
-	return instance.GetSnapshot()
+	return Singleton.GetSnapshot()
 }
 
 // Ref -- References an instance of 'key' (in singleton mode)
 func Ref(key string) *Instance {
-	return instance.Ref(key)
+	return Singleton.Ref(key)
 }
 
-// Reset -- resets the internal state of the singleton GoRef instance
+// Reset -- resets the internal state of the singleton GoFaster instance
 func Reset() {
-	instance.Reset()
+	Singleton.Reset()
 }

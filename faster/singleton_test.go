@@ -15,12 +15,12 @@ func TestSingleton(t *testing.T) {
 	snap2 := GetSnapshot()
 
 	// current state
-	assert.Contains(t, instance.data, "hello")
-	assert.Contains(t, instance.data, "world")
-	d := instance.get("hello")
+	assert.Contains(t, Singleton.data, "hello")
+	assert.Contains(t, Singleton.data, "world")
+	d := Singleton.get("hello")
 	assert.Equal(t, int32(0), d.active)
 	assert.Equal(t, int64(1), d.count)
-	d = instance.get("world")
+	d = Singleton.get("world")
 	assert.Equal(t, int32(0), d.active)
 	assert.Equal(t, int64(1), d.count)
 
@@ -30,8 +30,8 @@ func TestSingleton(t *testing.T) {
 
 	GetSnapshot() // synchronize
 
-	assert.NotContains(t, instance.data, "hello")
-	assert.Contains(t, instance.data, "bla")
+	assert.NotContains(t, Singleton.data, "hello")
+	assert.Contains(t, Singleton.data, "bla")
 
 	//
 	// check Snapshot data after the fact
