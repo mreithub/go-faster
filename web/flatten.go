@@ -2,7 +2,6 @@ package web
 
 import (
 	"sort"
-	"strings"
 
 	"github.com/mreithub/go-faster/faster"
 )
@@ -35,11 +34,26 @@ func recFlattenSnapshot(list []entry, snap *faster.Snapshot, pathPrefix []string
 
 func sortByPath(data []entry) {
 	sort.Slice(data, func(i, j int) bool {
-		return pathLessThan(data[i].Path, data[j].Path)
+		return pathLessThan(
+			append(data[i].Path, data[i].Name),
+			append(data[j].Path, data[j].Name))
 	})
 }
 
 func pathLessThan(a, b []string) bool {
-	// TODO avoid joining here (for added performance)
-	return strings.Join(a, ".") < strings.Join(b, ".")
+	if len(b) == 0 {
+		return false
+	} else if len(a) == 0 {
+		return true
+	}
+
+	var headA, tailA, headB, tailB = a[0], a[1:], b[0], b[1:]
+
+	if headA < headB {
+		return true
+	} else if headA > headB {
+		return false
+	}
+
+	return pathLessThan(tailA, tailB)
 }
