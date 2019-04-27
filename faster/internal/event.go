@@ -13,9 +13,10 @@ const (
 	EvReset EventType = iota
 	// EvSnapshot -- Takes a snapshot and sends it to snapshotChannel
 	EvSnapshot EventType = iota
-	// EvRef increments a ref counter
+
+	// EvRef -- increments a ref counter
 	EvRef EventType = iota
-	// EvDeref a ref counter (and updates the total count + time)
+	// EvDeref -- deref a ref counter (and updates the total count + time)
 	EvDeref EventType = iota
 )
 
