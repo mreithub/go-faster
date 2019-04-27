@@ -1,5 +1,7 @@
 package faster
 
+import "time"
+
 // Singleton -- global GoFaster instance
 var Singleton = New()
 
@@ -16,4 +18,8 @@ func Ref(key ...string) *Instance {
 // Reset -- resets the internal state of the singleton GoFaster instance
 func Reset() {
 	Singleton.Reset()
+}
+
+func SetTicker(name string, interval time.Duration, keep int) {
+	Singleton.SetTicker(name, interval, keep)
 }

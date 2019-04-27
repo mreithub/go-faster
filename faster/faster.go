@@ -1,6 +1,7 @@
 package faster
 
 import (
+	"sync"
 	"time"
 
 	"github.com/mreithub/go-faster/faster/internal"
@@ -16,6 +17,11 @@ type Faster struct {
 
 	evChannel       chan internal.Event
 	snapshotChannel chan *Snapshot
+
+	// periodic snapshots
+	tickers     map[string]*internal.Periodic
+	tickersLock sync.Mutex
+	tickChan    chan *internal.Periodic
 }
 
 func (g *Faster) do(evType internal.EventType, path []string, took time.Duration) {
@@ -24,6 +30,27 @@ func (g *Faster) do(evType internal.EventType, path []string, took time.Duration
 		Path: path,
 		Took: took,
 	}
+}
+
+// SetTicker -- Sets up periodic snapshots
+//
+// - name is the unique name of the given ticker
+// - interval specifies how often these ticks should happen (if 0, the ticker will be deleted)
+// - keep is the number of past Snapshots stored for the given ticker
+func (g *Faster) SetTicker(name string, interval time.Duration, keep int) {
+	g.tickersLock.Lock()
+	defer g.tickersLock.Unlock()
+
+	if ticker, ok := g.tickers[name]; ok {
+		// replacing/removing an existing ticker -> stop the old one
+		ticker.Stop()
+	}
+
+	if interval == 0 {
+		return
+	}
+
+	g.tickers[name] = internal.NewPeriodic(name, interval, keep, g.tickChan)
 }
 
 // Ref -- References an instance of 'key'
@@ -60,6 +87,10 @@ func (g *Faster) run() {
 			default:
 				panic("unsupported go-faster event type")
 			}
+		case ticker := <-g.tickChan:
+			//log.Print("tick: ", ticker)
+			var snap = g.takeSnapshotRec(g.root, time.Now())
+			ticker.Push(snap)
 		}
 	}
 }
@@ -104,6 +135,9 @@ func New() *Faster {
 		root:            new(internal.Data),
 		evChannel:       make(chan internal.Event, 100),
 		snapshotChannel: make(chan *Snapshot, 5),
+
+		tickChan: make(chan *internal.Periodic),
+		tickers:  make(map[string]*internal.Periodic),
 	}
 	go rc.run()
 
