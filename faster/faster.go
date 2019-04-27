@@ -38,25 +38,28 @@ func (g *Faster) Ref(key ...string) *Instance {
 }
 
 func (g *Faster) run() {
-	for msg := range g.evChannel {
-		//log.Print("~~gofaster: ", msg)
-		switch msg.Type {
-		case internal.EvRef:
-			g.root.GetChild(msg.Path...).Active++
-		case internal.EvDeref:
-			d := g.root.GetChild(msg.Path...)
-			d.Active--
-			d.Count++
-			d.TotalTime += msg.Took
-		case internal.EvSnapshot:
-			var snap = g.takeSnapshotRec(g.root, time.Now())
-			g.snapshotChannel <- snap
-		case internal.EvReset:
-			g.root = new(internal.Data)
-		case internal.EvStop:
-			return // TODO stop this GoFaster instance safely
-		default:
-			panic("unsupported GoFaster event type")
+	for {
+		select {
+		case msg := <-g.evChannel:
+			//log.Print("~~gofaster: ", msg)
+			switch msg.Type {
+			case internal.EvRef:
+				g.root.GetChild(msg.Path...).Active++
+			case internal.EvDeref:
+				d := g.root.GetChild(msg.Path...)
+				d.Active--
+				d.Count++
+				d.TotalTime += msg.Took
+			case internal.EvSnapshot:
+				var snap = g.takeSnapshotRec(g.root, time.Now())
+				g.snapshotChannel <- snap
+			case internal.EvReset:
+				g.root = new(internal.Data)
+			case internal.EvStop:
+				return // TODO stop this GoFaster instance safely
+			default:
+				panic("unsupported go-faster event type")
+			}
 		}
 	}
 }
