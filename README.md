@@ -14,7 +14,7 @@ It'll ask the worker goroutine to create a deep copy of Faster's instance curren
 
 GoFaster's code is thread safe. It uses a messaging channel read by a single worker goroutine
 which does the heavy lifting.  
-Calls to `Ref()` and `Deref()` are asynchronous
+Calls to `Track()` and `Done()` are asynchronous
 (that asynchronousity doesn't affect time measurement though).  
 
 
@@ -29,7 +29,7 @@ Add the following snippet to each function (or goroutine) you want to track
 (and replace 'foo' with your own key names).
 
 ```go
-ref := faster.Ref("foo"); defer ref.Deref()
+ref := faster.Track("foo"); defer ref.Done()
 ```
 
 The above snippet uses `GoFaster` in singleton mode. But you can also create your
@@ -40,7 +40,7 @@ application):
 g := faster.New()
 
 // and then instead of the above snippet:
-ref := g.Ref("foo"); defer ref.Deref()
+ref := g.Track("foo"); defer ref.Done()
 ```
 
 
@@ -71,8 +71,8 @@ Have a look at the usage documentation at [godoc.org][godoc].
 
 ```go
 func indexHTML(w http.ResponseWriter, r *http.Request) {
-	ref := faster.Ref("/")
-	defer ref.Deref()
+	ref := faster.Track("/")
+	defer ref.Done()
 
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
@@ -80,28 +80,18 @@ func indexHTML(w http.ResponseWriter, r *http.Request) {
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {
-	ref := faster.Ref("/hello.html")
-	defer ref.Deref()
+	ref := faster.Track("/hello.html")
+	defer ref.Done()
 
 	time.Sleep(200 * time.Millisecond)
 	msg := fmt.Sprintf("The time is %s", time.Now().String())
 	w.Write([]byte(msg))
 }
 
-func fasterJSON(w http.ResponseWriter, r *http.Request) {
-	ref := faster.Ref("/faster.json")
-	defer ref.Deref()
-
-	data, _ := json.Marshal(faster.GetSnapshot().Data)
-
-	w.Header().Add("Content-type", "application/json")
-	w.Write(data)
-}
-
 func main() {
 	http.HandleFunc("/", indexHTML)
 	http.HandleFunc("/delayed.html", delayedHTML)
-	http.HandleFunc("/faster.json", fasterJSON)
+	http.Handle("/_faster/", web.NewHandler("/_faster/", faster.Singleton))
 
 	http.ListenAndServe("localhost:1234", nil)
 }
@@ -162,9 +152,9 @@ func trackRequests(router *mux.Router) http.Handler {
       path, _ := match.Route.GetPathTemplate()
       path = fmt.Sprintf("%s %s", r.Method, path)
 
-      ref := faster.Ref(path)
+      ref := faster.Track(path)
       router.ServeHTTP(w, r)
-      ref.Deref()
+      ref.Done()
     } else {
       // No route found (-> 404 error)
       router.ServeHTTP(w, r)
@@ -241,7 +231,7 @@ In a benchmark run on my laptop, this typical ref counter snippet takes around
 a microsecond to run:
 
 ```go
-r := faster.Ref(); defer r.Deref()
+r := faster.Track(); defer r.Done()
 ```
 
 Interestingly, things are a lot faster if we don't use `defer`
@@ -250,8 +240,8 @@ as seen when running the `bench_test.go` benchmarks:
 ```
 $ go test --run=XXX --bench=.
 BenchmarkMeasureTime-4        	50000000	        33.9 ns/op
-BenchmarkRefDeref-4           	 5000000	       339 ns/op
-BenchmarkRefDerefDeferred-4   	 1000000	      1124 ns/op
+BenchmarkTrackDone-4           	 5000000	       339 ns/op
+BenchmarkTrackDoneDeferred-4   	 1000000	      1124 ns/op
 BenchmarkGetSnapshot100-4     	  100000	     12367 ns/op
 BenchmarkGetSnapshot1000-4    	   10000	    127117 ns/op
 PASS
@@ -259,8 +249,8 @@ ok  	github.com/mreithub/faster	7.605s
 ```
 
 - `BenchmarkMeasureTime()` measures the cost of calling time.Now() twice and calculating the nanoseconds between them
-- `BenchmarkRefDeref()` calls `faster.Ref("hello").Deref()` directly (without using `defer`)
-- `BenchmarkRefDerefDeferred()` uses `defer` (as in the snippet above)
+- `BenchmarkTrackDone()` calls `faster.Track("hello").Done()` directly (without using `defer`)
+- `BenchmarkTrackDoneDeferred()` uses `defer` (as in the snippet above)
 - `BenchmarkGetSnapshot*()` measure the time it takes to take a snapshot of a GoFaster instance with 100 and 1000 entries (= different keys) respectively
 
 [golang]: https://golang.org/
