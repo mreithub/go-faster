@@ -35,7 +35,7 @@ tr>td {
       <td>{{.Data.Active}}</td>
       <td>{{.Data.Count}}</td>
       <td data-raw="{{printf "%d" .Data.Duration}}">{{.Data.Duration}}</td>
-      <td data-raw="{{printf "%d" .Data.AvgMsec}}">{{.Data.AvgMsec}}</td>
+      <td data-raw="{{printf "%d" .Data.Average}}">{{.Data.Average}}</td>
     </tr>
     {{end}}
   </tbody>

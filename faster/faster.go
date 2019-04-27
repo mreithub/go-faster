@@ -15,7 +15,7 @@ type data struct {
 	// number of finished invocations
 	count int64
 	// time spent in those invocations (in nanoseconds)
-	nsec int64
+	totalTime time.Duration
 }
 
 // event types (for internal communication):
@@ -35,7 +35,7 @@ const (
 type event struct {
 	typ  int
 	key  string
-	nsec int64
+	took time.Duration
 }
 
 // Faster -- A simple, go-style key-based reference counter that can be used for profiling your application (main class)
@@ -52,11 +52,11 @@ type Faster struct {
 	snapshotChannel chan Snapshot
 }
 
-func (g *Faster) do(evType int, key string, nsec int64) {
+func (g *Faster) do(evType int, key string, took time.Duration) {
 	g.evChannel <- event{
 		typ:  evType,
 		key:  key,
-		nsec: nsec,
+		took: took,
 	}
 }
 
@@ -93,7 +93,7 @@ func (g *Faster) run() {
 			d := g.get(msg.key)
 			d.active--
 			d.count++
-			d.nsec += msg.nsec
+			d.totalTime += msg.took
 			break
 		case evSnapshot:
 			g.takeSnapshot()

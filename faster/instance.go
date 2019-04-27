@@ -20,13 +20,13 @@ func (i *Instance) Deref() {
 	}
 
 	var now time.Time
-	var nsec int64
+	var took time.Duration
 	if !i.startTime.IsZero() {
 		// only measure time if startTime was set
 		now = time.Now()
-		nsec = now.Sub(i.startTime).Nanoseconds()
+		took = now.Sub(i.startTime)
 	}
 
-	i.parent.do(evDeref, i.key, nsec)
+	i.parent.do(evDeref, i.key, took)
 	i.parent = nil // prevent double Deref()
 }

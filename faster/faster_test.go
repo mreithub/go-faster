@@ -32,11 +32,11 @@ func TestBasics(t *testing.T) {
 	d := g.get("hello")
 	assert.Equal(t, int32(0), d.active)
 	assert.Equal(t, int64(2), d.count)
-	assert.True(t, d.nsec > 0)
+	assert.True(t, d.totalTime > 0)
 	d = g.get("world")
 	assert.Equal(t, int32(0), d.active)
 	assert.Equal(t, int64(1), d.count)
-	assert.True(t, d.nsec >= 100000000)
+	assert.True(t, d.totalTime >= 100000000)
 
 	// clone1: Ref('hello'), Deref('hello')
 	keys := clone1.Keys()
