@@ -10,7 +10,7 @@ import (
 // Instance - Trackable instance
 type Instance struct {
 	parent    *Faster
-	key       string
+	path      []string
 	startTime time.Time
 }
 
@@ -29,6 +29,6 @@ func (i *Instance) Deref() {
 		took = now.Sub(i.startTime)
 	}
 
-	i.parent.do(internal.EvDeref, i.key, took)
+	i.parent.do(internal.EvDeref, i.path, took)
 	i.parent = nil // prevent double Deref()
 }

@@ -4,11 +4,20 @@ import "time"
 
 // Snapshot -- point-in-time copy of a GoFaster instance
 type Snapshot struct {
-	// Child GoFaster instance data
-	Children map[string]Snapshot `json:"_children,omitempty"`
+	// Currently active invocations
+	Active int32 `json:"active"`
 
-	// Snapshot data
-	Data map[string]Data `json:"data,omitempty"`
+	// Total number of (finished) invocations
+	Count int64 `json:"count"`
+
+	// Total time spent
+	Duration time.Duration `json:"duration"`
+
+	// Computed average run time, provided for convenience
+	Average time.Duration `json:"average"`
+
+	// Child GoFaster instance data
+	Children map[string]*Snapshot `json:"_children,omitempty"`
 
 	// Creation timestamp
 	Ts time.Time `json:"ts"`
@@ -16,9 +25,9 @@ type Snapshot struct {
 
 // Keys -- List all keys of this read-only instance
 func (s *Snapshot) Keys() []string {
-	rc := make([]string, 0, len(s.Data))
+	rc := make([]string, 0, len(s.Children))
 
-	for k := range s.Data {
+	for k := range s.Children {
 		rc = append(rc, k)
 	}
 

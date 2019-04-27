@@ -22,6 +22,6 @@ const (
 // Event -- internal events
 type Event struct {
 	Type EventType
-	Key  string
+	Path []string
 	Took time.Duration
 }

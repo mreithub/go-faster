@@ -35,7 +35,7 @@ func (h *WebHandler) indexHTML(w http.ResponseWriter, r *http.Request) {
 	if !h.checkMethod(w, r, "GET") {
 		return
 	}
-	ref := h.faster.GetChild("http", "_faster").Ref("GET index.html")
+	ref := h.faster.Ref("http", "_faster", "GET index.html")
 	defer ref.Deref()
 
 	var tpl = h.templates["index.html"]
@@ -54,7 +54,7 @@ func (h *WebHandler) snapshotJSON(w http.ResponseWriter, r *http.Request) {
 	if !h.checkMethod(w, r, "GET") {
 		return
 	}
-	ref := h.faster.GetChild("http", "_faster").Ref("GET snapshot.json")
+	ref := h.faster.Ref("http", "_faster", "GET snapshot.json")
 	defer ref.Deref()
 
 	data, _ := json.MarshalIndent(faster.GetSnapshot(), "", "  ")

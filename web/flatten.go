@@ -10,15 +10,15 @@ import (
 type entry struct {
 	Name string
 	Path []string
-	Data faster.Data
+	Data *faster.Snapshot
 }
 
-func flattenSnapshot(snap faster.Snapshot) []entry {
+func flattenSnapshot(snap *faster.Snapshot) []entry {
 	return recFlattenSnapshot(nil, snap, nil)
 }
 
-func recFlattenSnapshot(list []entry, snap faster.Snapshot, pathPrefix []string) []entry {
-	for k, v := range snap.Data {
+func recFlattenSnapshot(list []entry, snap *faster.Snapshot, pathPrefix []string) []entry {
+	for k, v := range snap.Children {
 		list = append(list, entry{
 			Name: k,
 			Path: pathPrefix,

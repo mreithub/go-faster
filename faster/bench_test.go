@@ -7,7 +7,7 @@ import (
 )
 
 var nsec int64
-var snap Snapshot
+var snap *Snapshot
 
 // BenchmarkMeasureTime -- Measures how long measuring the time takes (using time.Now() and Time.Sub())
 func BenchmarkMeasureTime(b *testing.B) {
