@@ -43,20 +43,16 @@ func (g *Faster) run() {
 		switch msg.Type {
 		case internal.EvRef:
 			g.root.GetChild(msg.Path...).Active++
-			break
 		case internal.EvDeref:
 			d := g.root.GetChild(msg.Path...)
 			d.Active--
 			d.Count++
 			d.TotalTime += msg.Took
-			break
 		case internal.EvSnapshot:
 			var snap = g.takeSnapshotRec(g.root, time.Now())
 			g.snapshotChannel <- snap
-			break
 		case internal.EvReset:
 			g.root = new(internal.Data)
-			break
 		case internal.EvStop:
 			return // TODO stop this GoFaster instance safely
 		default:
