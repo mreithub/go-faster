@@ -1,6 +1,10 @@
 package faster
 
-import "time"
+import (
+	"time"
+
+	"github.com/mreithub/go-faster/faster/internal"
+)
 
 // Data -- Reference counter Snapshot data
 type Data struct {
@@ -20,16 +24,16 @@ type Data struct {
 // Fills a Data object with the values from an (internal) data object
 //
 // Copies all the duplicate fields over and calculates the convenience fields.
-func newData(src *data) Data {
+func newData(src *internal.Data) Data {
 	var average time.Duration
-	if src.count > 0 {
-		average = src.totalTime / time.Duration(src.count)
+	if src.Count > 0 {
+		average = src.TotalTime / time.Duration(src.Count)
 	}
 
 	return Data{
-		Active:   src.active,
-		Count:    src.count,
-		Duration: time.Duration(src.totalTime),
+		Active:   src.Active,
+		Count:    src.Count,
+		Duration: time.Duration(src.TotalTime),
 		Average:  average,
 	}
 }

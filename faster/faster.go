@@ -3,20 +3,12 @@ package faster
 import (
 	"sync"
 	"time"
+
+	"github.com/mreithub/go-faster/faster/internal"
 )
 
 // TODO tracking execution time might cause performance issues (e.g. in virtualized environments gettimeofday() might be slow)
 //   if that turns out to be the case, deactivate Data.TotalNsec
-
-// data -- internal GoFaster data structure
-type data struct {
-	// currently active invocations
-	active int32
-	// number of finished invocations
-	count int64
-	// time spent in those invocations (in nanoseconds)
-	totalTime time.Duration
-}
 
 // event types (for internal communication):
 const (
@@ -43,7 +35,7 @@ type Faster struct {
 	name   string
 	parent *Faster
 
-	data map[string]*data
+	data map[string]*internal.Data
 
 	_children map[string]*Faster
 	childLock sync.Mutex
@@ -61,10 +53,10 @@ func (g *Faster) do(evType int, key string, took time.Duration) {
 }
 
 // get -- Get the Data object for the specified key (or create it) - thread safe
-func (g *Faster) get(key string) *data {
+func (g *Faster) get(key string) *internal.Data {
 	rc, ok := g.data[key]
 	if !ok {
-		rc = &data{}
+		rc = &internal.Data{}
 		g.data[key] = rc
 	}
 
@@ -87,19 +79,19 @@ func (g *Faster) run() {
 		//log.Print("~~gofaster: ", msg)
 		switch msg.typ {
 		case evRef:
-			g.get(msg.key).active++
+			g.get(msg.key).Active++
 			break
 		case evDeref:
 			d := g.get(msg.key)
-			d.active--
-			d.count++
-			d.totalTime += msg.took
+			d.Active--
+			d.Count++
+			d.TotalTime += msg.took
 			break
 		case evSnapshot:
 			g.takeSnapshot()
 			break
 		case evReset:
-			g.data = map[string]*data{}
+			g.data = map[string]*internal.Data{}
 			break
 		case evStop:
 			return // TODO stop this GoFaster instance safely
@@ -221,7 +213,7 @@ func newFaster(name string, parent *Faster) *Faster {
 	rc := &Faster{
 		name:            name,
 		parent:          parent,
-		data:            map[string]*data{},
+		data:            map[string]*internal.Data{},
 		_children:       map[string]*Faster{},
 		evChannel:       make(chan event, 100),
 		snapshotChannel: make(chan Snapshot, 5),
