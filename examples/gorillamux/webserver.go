@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/mreithub/go-faster/faster"
+	"github.com/mreithub/go-faster/web"
 )
 
 func indexHTML(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,7 @@ func processStuff(name string) chan string {
 
 	go func() {
 		// since processing takes some time, we'll add a separate GoFaster instance here (this time in the "app" scope)
-		r := faster.GetInstance("app").Ref("processing")
+		r := faster.Ref("app", "processing")
 		defer r.Deref()
 
 		time.Sleep(200 * time.Millisecond)
@@ -49,7 +50,6 @@ func fasterJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 func trackRequests(router *mux.Router) http.Handler {
-	g := faster.GetInstance("http")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Try to find the matching HTTP route (we'll use that as GoFaster key)
 		var match mux.RouteMatch
@@ -57,7 +57,7 @@ func trackRequests(router *mux.Router) http.Handler {
 			path, _ := match.Route.GetPathTemplate()
 			path = fmt.Sprintf("%s %s", r.Method, path)
 
-			ref := g.Ref(path)
+			ref := faster.Ref("http", path)
 			router.ServeHTTP(w, r)
 			ref.Deref()
 		} else {
@@ -72,8 +72,13 @@ func main() {
 
 	r.HandleFunc("/", indexHTML)
 	r.HandleFunc("/delayed.html", delayedHTML)
-	r.HandleFunc("/faster.json", fasterJSON)
+	r.Handle("/_faster/", web.NewHandler("/_faster/", faster.Singleton))
 
 	var handler = handlers.LoggingHandler(os.Stdout, trackRequests(r))
-	log.Fatal(http.ListenAndServe("localhost:1234", handler))
+
+	var addr = "localhost:1234"
+	log.Printf("starting web server at '%s'", addr)
+	log.Printf(" - go to 'http://%s/_faster/' for the dashboard", addr)
+
+	log.Fatal(http.ListenAndServe(addr, handler))
 }
