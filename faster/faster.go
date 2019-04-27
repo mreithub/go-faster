@@ -10,26 +10,6 @@ import (
 // TODO tracking execution time might cause performance issues (e.g. in virtualized environments gettimeofday() might be slow)
 //   if that turns out to be the case, deactivate Data.TotalNsec
 
-// event types (for internal communication):
-const (
-	// stop the goroutine handling this GoFaster instance
-	evStop = iota
-	// resets this GoFaster instance
-	evReset = iota
-	// Takes a snapshot and sends it to snapshotChannel
-	evSnapshot = iota
-	// increments a ref counter
-	evRef = iota
-	// decrements a ref counter (and updates the total count + time)
-	evDeref = iota
-)
-
-type event struct {
-	typ  int
-	key  string
-	took time.Duration
-}
-
 // Faster -- A simple, go-style key-based reference counter that can be used for profiling your application (main class)
 type Faster struct {
 	name   string
@@ -40,15 +20,15 @@ type Faster struct {
 	_children map[string]*Faster
 	childLock sync.Mutex
 
-	evChannel       chan event
+	evChannel       chan internal.Event
 	snapshotChannel chan Snapshot
 }
 
-func (g *Faster) do(evType int, key string, took time.Duration) {
-	g.evChannel <- event{
-		typ:  evType,
-		key:  key,
-		took: took,
+func (g *Faster) do(evType internal.EventType, key string, took time.Duration) {
+	g.evChannel <- internal.Event{
+		Type: evType,
+		Key:  key,
+		Took: took,
 	}
 }
 
@@ -65,7 +45,7 @@ func (g *Faster) get(key string) *internal.Data {
 
 // Ref -- References an instance of 'key'
 func (g *Faster) Ref(key string) *Instance {
-	g.do(evRef, key, 0)
+	g.do(internal.EvRef, key, 0)
 
 	return &Instance{
 		parent:    g,
@@ -77,23 +57,23 @@ func (g *Faster) Ref(key string) *Instance {
 func (g *Faster) run() {
 	for msg := range g.evChannel {
 		//log.Print("~~gofaster: ", msg)
-		switch msg.typ {
-		case evRef:
-			g.get(msg.key).Active++
+		switch msg.Type {
+		case internal.EvRef:
+			g.get(msg.Key).Active++
 			break
-		case evDeref:
-			d := g.get(msg.key)
+		case internal.EvDeref:
+			d := g.get(msg.Key)
 			d.Active--
 			d.Count++
-			d.TotalTime += msg.took
+			d.TotalTime += msg.Took
 			break
-		case evSnapshot:
+		case internal.EvSnapshot:
 			g.takeSnapshot()
 			break
-		case evReset:
+		case internal.EvReset:
 			g.data = map[string]*internal.Data{}
 			break
-		case evStop:
+		case internal.EvStop:
 			return // TODO stop this GoFaster instance safely
 		default:
 			panic("unsupported GoFaster event type")
@@ -169,7 +149,7 @@ func (g *Faster) GetPath() []string {
 
 // GetSnapshot -- Creates and returns a deep copy of the current state (including child instance states)
 func (g *Faster) GetSnapshot() Snapshot {
-	g.do(evSnapshot, "", 0)
+	g.do(internal.EvSnapshot, "", 0)
 
 	// get child snapshots while we wait
 	children := g.GetChildren()
@@ -201,7 +181,7 @@ func (g *Faster) takeSnapshot() {
 
 // Reset -- Resets this GoFaster instance to its initial state
 func (g *Faster) Reset() {
-	g.do(evReset, "", 0)
+	g.do(internal.EvReset, "", 0)
 }
 
 // New -- Construct a new root-level GoFaster instance
@@ -215,7 +195,7 @@ func newFaster(name string, parent *Faster) *Faster {
 		parent:          parent,
 		data:            map[string]*internal.Data{},
 		_children:       map[string]*Faster{},
-		evChannel:       make(chan event, 100),
+		evChannel:       make(chan internal.Event, 100),
 		snapshotChannel: make(chan Snapshot, 5),
 	}
 	go rc.run()

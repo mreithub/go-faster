@@ -3,6 +3,8 @@ package faster
 import (
 	"log"
 	"time"
+
+	"github.com/mreithub/go-faster/faster/internal"
 )
 
 // Instance - Trackable instance
@@ -27,6 +29,6 @@ func (i *Instance) Deref() {
 		took = now.Sub(i.startTime)
 	}
 
-	i.parent.do(evDeref, i.key, took)
+	i.parent.do(internal.EvDeref, i.key, took)
 	i.parent = nil // prevent double Deref()
 }
