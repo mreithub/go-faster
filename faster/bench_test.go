@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var nsec int64
+var nsec time.Duration
 var snap *Snapshot
 
 // BenchmarkMeasureTime -- Measures how long measuring the time takes (using time.Now() and Time.Sub())
@@ -14,7 +14,7 @@ func BenchmarkMeasureTime(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		start := time.Now()
 		end := time.Now()
-		nsec = end.Sub(start).Nanoseconds()
+		nsec = end.Sub(start)
 	}
 
 }
