@@ -16,6 +16,11 @@ type entry struct {
 	Data *faster.Snapshot
 }
 
+// Key -- returns Path + Name
+func (e *entry) Key() []string {
+	return append(e.Path, e.Name)
+}
+
 func (e *entry) JSONPath() string {
 	var rc, _ = json.Marshal(append(e.Path, e.Name))
 	return string(rc)

@@ -31,11 +31,44 @@ func (h *WebHandler) checkMethod(w http.ResponseWriter, r *http.Request, whiteli
 	return false
 }
 
-func (h *WebHandler) indexHTML(w http.ResponseWriter, r *http.Request) {
+func (h *WebHandler) historyJSON(w http.ResponseWriter, r *http.Request) {
 	if !h.checkMethod(w, r, "GET") {
 		return
 	}
-	ref := h.faster.Track("http", "_faster", "GET index.html")
+
+	var data = map[string]interface{}{}
+	for name, history := range h.faster.ListTickers() {
+		data[name] = history.Len()
+	}
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Print("Failed to encode JSON response: ", err)
+	}
+}
+
+func (h *WebHandler) keyHandler(w http.ResponseWriter, r *http.Request) {
+	if !h.checkMethod(w, r, "GET") {
+		return
+	}
+
+	ref := h.faster.Track("_faster", "key")
+	defer ref.Done()
+
+	var tpl = h.templates["key.html"]
+	var err = tpl.Execute(w, map[string]interface{}{
+		"data": h.faster.ListTickers(),
+	})
+
+	if err != nil {
+		log.Print("Error: failed to render go-faster key.html template: ", err.Error())
+	}
+}
+
+func (h *WebHandler) indexHandler(w http.ResponseWriter, r *http.Request) {
+	if !h.checkMethod(w, r, "GET") {
+		return
+	}
+	ref := h.faster.Track("_faster", "index")
 	defer ref.Done()
 
 	var tpl = h.templates["index.html"]
@@ -46,7 +79,7 @@ func (h *WebHandler) indexHTML(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		log.Print("Error: failed to render go-faster template: ", err.Error())
+		log.Print("Error: failed to render go-faster index.html template: ", err.Error())
 	}
 }
 
@@ -54,7 +87,7 @@ func (h *WebHandler) snapshotJSON(w http.ResponseWriter, r *http.Request) {
 	if !h.checkMethod(w, r, "GET") {
 		return
 	}
-	ref := h.faster.Track("http", "_faster", "GET snapshot.json")
+	ref := h.faster.Track("_faster", "snapshot.json")
 	defer ref.Done()
 
 	data, _ := json.MarshalIndent(faster.GetSnapshot(), "", "  ")
@@ -71,7 +104,7 @@ func (h *WebHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // NewHandler -- returns a http handler for the given GoFaster instance
 func NewHandler(prefix string, faster *faster.Faster) http.Handler {
 	var mux = http.NewServeMux()
-	var templates, err = parseTemplates()
+	var templates, err = parseTemplates(prefix)
 	if err != nil {
 		panic(err) // this only happens if there are template parsing errors
 	}
@@ -82,9 +115,10 @@ func NewHandler(prefix string, faster *faster.Faster) http.Handler {
 		templates: templates,
 	}
 
-	mux.HandleFunc(prefix, rc.indexHTML)
-	mux.HandleFunc(path.Join(prefix, "index.html"), rc.indexHTML)
+	mux.HandleFunc(prefix, rc.indexHandler)
+	mux.HandleFunc(path.Join(prefix, "key"), rc.keyHandler)
 	mux.HandleFunc(path.Join(prefix, "snapshot.json"), rc.snapshotJSON)
+	mux.HandleFunc(path.Join(prefix, "history.json"), rc.historyJSON)
 
 	return &rc
 }

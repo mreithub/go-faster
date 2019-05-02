@@ -1,10 +1,14 @@
 package web
 
-import "html/template"
+import (
+	"html/template"
+	"net/url"
+	"path"
+)
 
 var indexHTML = `
 <html>
-<head><title>Go-Faster statistics</title>
+<head><title>go-faster stats</title>
 <style>
 body {
   font-family: monospace;
@@ -28,7 +32,13 @@ td:first-child { text-align: initial; }
   <tbody>
     {{range .data}}
     <tr data-path="{{.JSONPath}}">
-      <td>{{range .Path}}&nbsp;&nbsp;{{end}}{{.Name}}</td>
+      <td>{{range .Path}}&nbsp;&nbsp;{{end -}}
+        {{if gt .Data.Count 0 }}
+          <a href="{{keyLink .Key}}">{{.Name}}</a>
+        {{else}}
+          {{.Name}}
+        {{end}}
+      </td>
       <td>{{or .Data.Active ""}}</td>
       <td>{{or .Data.Count ""}}</td>
       <td data-raw="{{printf "%d" .Data.Duration}}" title="{{.Data.Duration}}">{{.PrettyTotal}}</td>
@@ -41,16 +51,41 @@ td:first-child { text-align: initial; }
 </html>
 `
 
-func parseTemplates() (map[string]*template.Template, error) {
+var keyHTML = `
+<html>
+<head><title>{{.keyName}} - go-faster key stats</title>
+<style>
+</style>
+</head>
+<body>
+</body>
+</html>
+`
+
+func parseTemplates(prefix string) (map[string]*template.Template, error) {
 	var tpls = map[string]string{
 		"index.html": indexHTML,
+		"key.html":   keyHTML,
 	}
 	var rc = map[string]*template.Template{}
 	var err error
 
+	var funcs = map[string]interface{}{
+		"keyLink": func(key []string) string {
+			var query = url.Values{
+				"k": key,
+			}
+			var rc = url.URL{
+				Path:     path.Join(prefix, "key"),
+				RawQuery: query.Encode(),
+			}
+			return rc.String()
+		},
+	}
+
 	for name, html := range tpls {
 		var tpl *template.Template
-		if tpl, err = template.New(name).Parse(html); err != nil {
+		if tpl, err = template.New(name).Funcs(funcs).Parse(html); err != nil {
 			return nil, err
 		}
 		rc[name] = tpl
