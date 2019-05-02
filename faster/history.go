@@ -22,6 +22,13 @@ type History struct {
 	entryLock sync.RWMutex
 }
 
+// Duration -- returns .Capacity * .Interval()
+//
+// to get the actual time span stored in this History object, use time.Now().Sub(h.FirstTS())
+func (h *History) Duration() time.Duration {
+	return h.interval * time.Duration(h.Capacity)
+}
+
 // First -- returns a reference to the oldest Snapshot entry of this History
 // instance (or nil if empty)
 func (h *History) First() *Snapshot {
@@ -42,6 +49,18 @@ func (h *History) FirstTS() time.Time {
 	if s := h.First(); s != nil {
 		rc = s.Ts
 	}
+	return rc
+}
+
+// ForKey -- wrapper around List() filtering for the selected key
+func (h *History) ForKey(key ...string) []*Snapshot {
+	var data = h.List()
+	var rc = make([]*Snapshot, 0, len(data))
+
+	for _, snapshot := range data {
+		rc = append(rc, snapshot.Get(key...))
+	}
+
 	return rc
 }
 
