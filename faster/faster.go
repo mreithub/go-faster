@@ -33,8 +33,8 @@ type Faster struct {
 	tickChan chan *History
 }
 
-func (g *Faster) do(evType internal.EventType, path []string, took time.Duration) {
-	g.evChannel <- internal.Event{
+func (f *Faster) do(evType internal.EventType, path []string, took time.Duration) {
+	f.evChannel <- internal.Event{
 		Type: evType,
 		Path: path,
 		Took: took,
@@ -46,11 +46,11 @@ func (g *Faster) do(evType internal.EventType, path []string, took time.Duration
 // - name is the unique name of the given History ticker
 // - interval specifies how often these ticks should happen (if 0, the ticker will be deleted)
 // - keep is the number of past Snapshots stored for the given History object
-func (g *Faster) SetTicker(name string, interval time.Duration, keep int) {
-	g.historyLock.Lock()
-	defer g.historyLock.Unlock()
+func (f *Faster) SetTicker(name string, interval time.Duration, keep int) {
+	f.historyLock.Lock()
+	defer f.historyLock.Unlock()
 
-	if ticker, ok := g.history[name]; ok {
+	if ticker, ok := f.history[name]; ok {
 		// replacing/removing an existing ticker -> stop the old one
 		ticker.Stop()
 	}
@@ -59,66 +59,66 @@ func (g *Faster) SetTicker(name string, interval time.Duration, keep int) {
 		return
 	}
 
-	g.history[name] = NewHistory(name, interval, keep, g.tickChan)
+	f.history[name] = NewHistory(name, interval, keep, f.tickChan)
 }
 
 // Track -- Tracks an instance of 'key'
-func (g *Faster) Track(key ...string) *Instance {
-	g.do(internal.EvTrack, key, 0)
+func (f *Faster) Track(key ...string) *Instance {
+	f.do(internal.EvTrack, key, 0)
 
 	return &Instance{
-		parent:    g,
+		parent:    f,
 		path:      key,
 		startTime: time.Now(),
 	}
 }
 
-func (g *Faster) run() {
+func (f *Faster) run() {
 	for {
 		select {
-		case msg := <-g.evChannel:
+		case msg := <-f.evChannel:
 			//log.Print("~~gofaster: ", msg)
 			switch msg.Type {
 			case internal.EvTrack:
-				g.root.GetChild(msg.Path...).Active++
+				f.root.GetChild(msg.Path...).Active++
 			case internal.EvDone:
-				d := g.root.GetChild(msg.Path...)
+				d := f.root.GetChild(msg.Path...)
 				d.Active--
 				d.Count++
 				d.TotalTime += msg.Took
 			case internal.EvSnapshot:
-				var snap = g.takeSnapshotRec(g.root, time.Now())
-				g.snapshotChannel <- snap
+				var snap = f.takeSnapshotRec(f.root, time.Now())
+				f.snapshotChannel <- snap
 			case internal.EvReset:
-				g.root = new(internal.Data)
+				f.root = new(internal.Data)
 			case internal.EvStop:
 				return // TODO stop this GoFaster instance safely
 			default:
 				panic("unsupported go-faster event type")
 			}
-		case history := <-g.tickChan:
+		case history := <-f.tickChan:
 			//log.Print("tick: ", history)
-			var snap = g.takeSnapshotRec(g.root, time.Now())
+			var snap = f.takeSnapshotRec(f.root, time.Now())
 			history.push(snap)
 		}
 	}
 }
 
 // GetSnapshot -- Creates and returns a deep copy of the current state (including child instance states)
-func (g *Faster) GetSnapshot() *Snapshot {
-	g.do(internal.EvSnapshot, nil, 0)
-	return <-g.snapshotChannel
+func (f *Faster) GetSnapshot() *Snapshot {
+	f.do(internal.EvSnapshot, nil, 0)
+	return <-f.snapshotChannel
 }
 
 // takeSnapshot -- internal (-> thread-unsafe) method taking a deep copy of the current state
 //
 // should only ever be called from within the run() goroutine
 // 'now' is passed all the way down
-func (g *Faster) takeSnapshotRec(data *internal.Data, now time.Time) *Snapshot {
+func (f *Faster) takeSnapshotRec(data *internal.Data, now time.Time) *Snapshot {
 	var children = make(map[string]*Snapshot, len(data.Children))
 
 	for key, child := range data.Children {
-		children[key] = g.takeSnapshotRec(child, now)
+		children[key] = f.takeSnapshotRec(child, now)
 	}
 
 	var rc = Snapshot{
@@ -134,8 +134,8 @@ func (g *Faster) takeSnapshotRec(data *internal.Data, now time.Time) *Snapshot {
 }
 
 // Reset -- Resets this GoFaster instance to its initial state
-func (g *Faster) Reset() {
-	g.do(internal.EvReset, nil, 0)
+func (f *Faster) Reset() {
+	f.do(internal.EvReset, nil, 0)
 }
 
 // New -- Construct a new root-level GoFaster instance
