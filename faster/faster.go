@@ -104,6 +104,19 @@ func (f *Faster) run() {
 	}
 }
 
+// ListTickers -- returns the (currently registered) History tickers (taking periodic snapshots)
+func (f *Faster) ListTickers() map[string]*History {
+	f.historyLock.Lock()
+	defer f.historyLock.Unlock()
+
+	var rc = make(map[string]*History, len(f.history))
+	for k, v := range f.history {
+		rc[k] = v
+	}
+
+	return rc
+}
+
 // GetSnapshot -- Creates and returns a deep copy of the current state (including child instance states)
 func (f *Faster) GetSnapshot() *Snapshot {
 	f.do(internal.EvSnapshot, nil, 0)
