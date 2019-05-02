@@ -96,10 +96,10 @@ func (g *Faster) run() {
 			default:
 				panic("unsupported go-faster event type")
 			}
-		case ticker := <-g.tickChan:
-			//log.Print("tick: ", ticker)
+		case history := <-g.tickChan:
+			//log.Print("tick: ", history)
 			var snap = g.takeSnapshotRec(g.root, time.Now())
-			ticker.Push(snap)
+			history.push(snap)
 		}
 	}
 }
