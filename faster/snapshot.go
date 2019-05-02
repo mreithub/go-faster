@@ -23,6 +23,19 @@ type Snapshot struct {
 	Ts time.Time `json:"ts"`
 }
 
+// Get -- Recursively traverse this Snapshot instance returning the entry matching the given key (or nil if not found)
+func (s *Snapshot) Get(key ...string) *Snapshot {
+	if len(key) == 0 {
+		return s
+	}
+	var head, tail = key[0], key[1:]
+	if child, ok := s.Children[head]; ok {
+		return child.Get(tail...)
+	} else {
+		return nil // not found
+	}
+}
+
 // Keys -- List all keys of this read-only instance
 func (s *Snapshot) Keys() []string {
 	rc := make([]string, 0, len(s.Children))
