@@ -15,6 +15,8 @@ type History struct {
 
 	Name     string
 	Capacity int
+
+	interval time.Duration
 	entries  *list.List
 	// guards History.entries (but not its (immutable) data)
 	entryLock sync.RWMutex
@@ -41,6 +43,12 @@ func (h *History) FirstTS() time.Time {
 		rc = s.Ts
 	}
 	return rc
+}
+
+// Interval -- returns the interval of the internal History Ticker
+func (h *History) Interval() time.Duration {
+	// we use a getter here to prevent the user from changing this (which wouldn't affect the internal ticker but might lead to odd behaviour)
+	return h.interval
 }
 
 // Len -- returns the number of entries currently stored in this History struct (thread safe)
@@ -99,6 +107,7 @@ func NewHistory(name string, interval time.Duration, keep int, tickChannel chan 
 		ticker:   time.NewTicker(interval),
 		Name:     name,
 		Capacity: keep,
+		interval: interval,
 		entries:  list.New(),
 	}
 
