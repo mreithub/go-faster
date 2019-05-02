@@ -15,13 +15,22 @@ type Faster struct {
 	// internal data structure -- only ever accessed from within the run() goroutine // TODO check if this is true
 	root *internal.Data
 
-	evChannel       chan internal.Event
+	// processed by the run() goroutine
+	evChannel chan internal.Event
+
+	// calling GetSnapshot() triggers an internal.EvSnapshot which in turn causes
+	// the run() goroutine to take one and push it here -- while it's not guaranteed
+	// that each GetSnapshot() call will read the response to its own request
+	// (multiple GetSnapshot() calls might block concurrently), that doesn't really
+	// change the results of each call
 	snapshotChannel chan *Snapshot
 
 	// periodic snapshots
-	tickers     map[string]*internal.Periodic
-	tickersLock sync.Mutex
-	tickChan    chan *internal.Periodic
+	history map[string]*History
+	// guards the history map
+	historyLock sync.Mutex
+	// indicates a History ticker expired (and expects to be sent a new Snapshot)
+	tickChan chan *History
 }
 
 func (g *Faster) do(evType internal.EventType, path []string, took time.Duration) {
@@ -34,14 +43,14 @@ func (g *Faster) do(evType internal.EventType, path []string, took time.Duration
 
 // SetTicker -- Sets up periodic snapshots
 //
-// - name is the unique name of the given ticker
+// - name is the unique name of the given History ticker
 // - interval specifies how often these ticks should happen (if 0, the ticker will be deleted)
-// - keep is the number of past Snapshots stored for the given ticker
+// - keep is the number of past Snapshots stored for the given History object
 func (g *Faster) SetTicker(name string, interval time.Duration, keep int) {
-	g.tickersLock.Lock()
-	defer g.tickersLock.Unlock()
+	g.historyLock.Lock()
+	defer g.historyLock.Unlock()
 
-	if ticker, ok := g.tickers[name]; ok {
+	if ticker, ok := g.history[name]; ok {
 		// replacing/removing an existing ticker -> stop the old one
 		ticker.Stop()
 	}
@@ -50,7 +59,7 @@ func (g *Faster) SetTicker(name string, interval time.Duration, keep int) {
 		return
 	}
 
-	g.tickers[name] = internal.NewPeriodic(name, interval, keep, g.tickChan)
+	g.history[name] = NewHistory(name, interval, keep, g.tickChan)
 }
 
 // Track -- Tracks an instance of 'key'
@@ -136,8 +145,8 @@ func New() *Faster {
 		evChannel:       make(chan internal.Event, 100),
 		snapshotChannel: make(chan *Snapshot, 5),
 
-		tickChan: make(chan *internal.Periodic),
-		tickers:  make(map[string]*internal.Periodic),
+		tickChan: make(chan *History),
+		history:  make(map[string]*History),
 	}
 	go rc.run()
 
