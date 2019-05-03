@@ -35,7 +35,7 @@ func (p *KeyPage) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if len(sortedTickers) > 0 {
 		selectedTicker = tickers[sortedTickers[0].Name] // TODO allow the user to pick another ticker
-		data = diff(selectedTicker.ForKey(key...))
+		data = selectedTicker.ForKey(key...).Relative()
 	}
 
 	var tpl = p.templates["key.html"]
