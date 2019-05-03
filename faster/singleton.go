@@ -11,7 +11,7 @@ func GetSnapshot() *Snapshot {
 }
 
 // Track -- Tracks an instance of 'key' (in singleton mode)
-func Track(key ...string) *Instance {
+func Track(key ...string) *Tracker {
 	return Singleton.Track(key...)
 }
 

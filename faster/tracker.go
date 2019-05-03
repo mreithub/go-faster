@@ -7,28 +7,28 @@ import (
 	"github.com/mreithub/go-faster/faster/internal"
 )
 
-// Instance - Trackable instance
-type Instance struct {
+// Tracker - Trackable instance
+type Tracker struct {
 	parent    *Faster
 	path      []string
 	startTime time.Time
 }
 
 // Done -- Dereference an instance of 'key'
-func (i *Instance) Done() {
-	if i.parent == nil {
-		log.Print("GoFaster warning: possible double Done()")
+func (t *Tracker) Done() {
+	if t.parent == nil {
+		log.Print("go-faster warning: possible double Done()")
 		return
 	}
 
 	var now time.Time
 	var took time.Duration
-	if !i.startTime.IsZero() {
+	if !t.startTime.IsZero() {
 		// only measure time if startTime was set
 		now = time.Now()
-		took = now.Sub(i.startTime)
+		took = now.Sub(t.startTime)
 	}
 
-	i.parent.do(internal.EvDone, i.path, took)
-	i.parent = nil // prevent double Done()
+	t.parent.do(internal.EvDone, t.path, took)
+	t.parent = nil // prevent double Done()
 }

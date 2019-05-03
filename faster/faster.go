@@ -63,10 +63,10 @@ func (f *Faster) SetTicker(name string, interval time.Duration, keep int) {
 }
 
 // Track -- Tracks an instance of 'key'
-func (f *Faster) Track(key ...string) *Instance {
+func (f *Faster) Track(key ...string) *Tracker {
 	f.do(internal.EvTrack, key, 0)
 
-	return &Instance{
+	return &Tracker{
 		parent:    f,
 		path:      key,
 		startTime: time.Now(),
