@@ -105,6 +105,7 @@ func NewHandler(prefix string, faster *faster.Faster) http.Handler {
 
 	mux.HandleFunc(prefix, rc.indexHandler)
 	mux.Handle(path.Join(prefix, "key"), rc.keyPage)
+	mux.HandleFunc(path.Join(prefix, "key", "history.json"), rc.keyPage.HistoryJSON)
 	mux.HandleFunc(path.Join(prefix, "snapshot.json"), rc.snapshotJSON)
 	mux.HandleFunc(path.Join(prefix, "history.json"), rc.historyJSON)
 
