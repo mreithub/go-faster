@@ -16,12 +16,13 @@ type WebHandler struct {
 	mux       *http.ServeMux
 	prefix    string
 	templates map[string]*template.Template
+	keyPage   *KeyPage
 
 	// TODO add auth callback
 }
 
 // checkMethod -- returns true if the Request method's in the whitelist
-func (h *WebHandler) checkMethod(w http.ResponseWriter, r *http.Request, whitelist ...string) bool {
+func checkMethod(w http.ResponseWriter, r *http.Request, whitelist ...string) bool {
 	for _, method := range whitelist {
 		if r.Method == method {
 			return true
@@ -33,7 +34,7 @@ func (h *WebHandler) checkMethod(w http.ResponseWriter, r *http.Request, whiteli
 }
 
 func (h *WebHandler) historyJSON(w http.ResponseWriter, r *http.Request) {
-	if !h.checkMethod(w, r, "GET") {
+	if !checkMethod(w, r, "GET") {
 		return
 	}
 
@@ -47,45 +48,8 @@ func (h *WebHandler) historyJSON(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *WebHandler) keyHandler(w http.ResponseWriter, r *http.Request) {
-	if !h.checkMethod(w, r, "GET") {
-		return
-	}
-
-	var key = r.URL.Query()["k"]
-	if len(key) == 0 {
-		http.Error(w, "missing key parameter(s): 'k'", http.StatusBadRequest)
-		return
-	}
-
-	ref := h.faster.Track("_faster", "key")
-	defer ref.Done()
-
-	var tickers = h.faster.ListTickers()
-	var sortedTickers = sortHistoryByInterval(tickers)
-	var selectedTicker *faster.History
-	var data []*faster.Snapshot
-
-	if len(sortedTickers) > 0 {
-		selectedTicker = tickers[sortedTickers[0].Name] // TODO allow the user to pick another ticker
-		data = diff(selectedTicker.ForKey(key...))
-	}
-
-	var tpl = h.templates["key.html"]
-	var err = tpl.Execute(w, map[string]interface{}{
-		"key":     key,
-		"keyName": key[len(key)-1],
-		"tickers": sortedTickers,
-		"data":    data,
-	})
-
-	if err != nil {
-		log.Print("Error: failed to render go-faster key.html template: ", err.Error())
-	}
-}
-
 func (h *WebHandler) indexHandler(w http.ResponseWriter, r *http.Request) {
-	if !h.checkMethod(w, r, "GET") {
+	if !checkMethod(w, r, "GET") {
 		return
 	}
 	ref := h.faster.Track("_faster", "index")
@@ -104,7 +68,7 @@ func (h *WebHandler) indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebHandler) snapshotJSON(w http.ResponseWriter, r *http.Request) {
-	if !h.checkMethod(w, r, "GET") {
+	if !checkMethod(w, r, "GET") {
 		return
 	}
 	ref := h.faster.Track("_faster", "snapshot.json")
@@ -133,10 +97,14 @@ func NewHandler(prefix string, faster *faster.Faster) http.Handler {
 		prefix:    prefix,
 		mux:       mux,
 		templates: templates,
+		keyPage: &KeyPage{
+			faster:    faster,
+			templates: templates,
+		},
 	}
 
 	mux.HandleFunc(prefix, rc.indexHandler)
-	mux.HandleFunc(path.Join(prefix, "key"), rc.keyHandler)
+	mux.Handle(path.Join(prefix, "key"), rc.keyPage)
 	mux.HandleFunc(path.Join(prefix, "snapshot.json"), rc.snapshotJSON)
 	mux.HandleFunc(path.Join(prefix, "history.json"), rc.historyJSON)
 
