@@ -31,7 +31,7 @@ func delayedHTML(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", indexHTML)
 	http.HandleFunc("/delayed.html", delayedHTML)
-	http.Handle("/_faster/", web.NewHandler("/_faster/", faster.Singleton))
+	http.Handle("/_faster/", http.StripPrefix("/_faster", web.NewHandler(faster.Singleton)))
 
 	var addr = "localhost:1234"
 	log.Printf("starting web server at '%s'", addr)

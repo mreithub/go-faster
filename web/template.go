@@ -3,12 +3,11 @@ package web
 import (
 	"html/template"
 	"net/url"
-	"path"
 
 	"github.com/mreithub/go-faster/web/internal"
 )
 
-func parseTemplates(prefix string) (map[string]*template.Template, error) {
+func parseTemplates() (map[string]*template.Template, error) {
 	var tpls = map[string]string{
 		"index.html": internal.IndexHTML,
 		"key.html":   internal.KeyHTML,
@@ -22,7 +21,7 @@ func parseTemplates(prefix string) (map[string]*template.Template, error) {
 				"k": key,
 			}
 			var rc = url.URL{
-				Path:     path.Join(prefix, "key"),
+				Path:     "key",
 				RawQuery: query.Encode(),
 			}
 			return rc.String()

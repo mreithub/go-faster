@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"path"
 
 	"github.com/mreithub/go-faster/faster"
 )
@@ -14,11 +13,10 @@ import (
 type WebHandler struct {
 	faster    *faster.Faster
 	mux       *http.ServeMux
-	prefix    string
 	templates map[string]*template.Template
 	keyPage   *KeyPage
 
-	// TODO add auth callback
+	AuthHandler http.Handler
 }
 
 // checkMethod -- returns true if the Request method's in the whitelist
@@ -81,20 +79,18 @@ func (h *WebHandler) snapshotJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO add auth here
 	h.mux.ServeHTTP(w, r)
 }
 
 // NewHandler -- returns a http handler for the given GoFaster instance
-func NewHandler(prefix string, faster *faster.Faster) http.Handler {
+func NewHandler(faster *faster.Faster) http.Handler {
 	var mux = http.NewServeMux()
-	var templates, err = parseTemplates(prefix)
+	var templates, err = parseTemplates()
 	if err != nil {
 		panic(err) // this only happens if there are template parsing errors
 	}
 	var rc = WebHandler{
 		faster:    faster,
-		prefix:    prefix,
 		mux:       mux,
 		templates: templates,
 		keyPage: &KeyPage{
@@ -103,11 +99,11 @@ func NewHandler(prefix string, faster *faster.Faster) http.Handler {
 		},
 	}
 
-	mux.HandleFunc(prefix, rc.indexHandler)
-	mux.Handle(path.Join(prefix, "key"), rc.keyPage)
-	mux.HandleFunc(path.Join(prefix, "key", "history.json"), rc.keyPage.HistoryJSON)
-	mux.HandleFunc(path.Join(prefix, "snapshot.json"), rc.snapshotJSON)
-	mux.HandleFunc(path.Join(prefix, "history.json"), rc.historyJSON)
+	mux.HandleFunc("/", rc.indexHandler)
+	mux.Handle("/key", rc.keyPage)
+	mux.HandleFunc("/key/history.json", rc.keyPage.HistoryJSON)
+	mux.HandleFunc("/snapshot.json", rc.snapshotJSON)
+	mux.HandleFunc("/history.json", rc.historyJSON)
 
 	return &rc
 }

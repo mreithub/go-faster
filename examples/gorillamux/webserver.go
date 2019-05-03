@@ -85,9 +85,9 @@ func main() {
 	r.HandleFunc("/delayed.html", delayedHTML)
 
 	// add simple HTTP basic auth to the go-faster stats page (as it might expose sensitive info)
-	var s = r.PathPrefix("/_faster/").Subrouter()
+	var s = r.PathPrefix("/_faster").Subrouter()
 	s.Use(basicAuthMW)
-	s.NewRoute().Handler(web.NewHandler("/_faster/", faster.Singleton))
+	s.NewRoute().Handler(http.StripPrefix("/_faster", web.NewHandler(faster.Singleton)))
 	var handler = handlers.LoggingHandler(os.Stdout, trackRequests(r))
 
 	// set up periodic go-faster snapshots
