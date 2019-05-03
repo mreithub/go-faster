@@ -77,6 +77,7 @@ func main() {
 
 	// set up periodic go-faster snapshots
 	faster.SetTicker("1sec", 1*time.Second, 120) // 2min
+	faster.SetTicker("1min", 1*time.Minute, 60)  // 1h
 
 	// start web server
 	var addr = "localhost:1234"
