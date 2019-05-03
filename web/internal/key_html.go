@@ -26,12 +26,18 @@ var KeyHTML = `
 
 <h3>Requests</h3>
 
-<div id="chart" style="width: 100%; min-height: 300px;"></div>
+<div>
+  Ticker:
+{{range .sortedTickers }}
+  <a {{if ne $.ticker.Name .Name}}href="{{$.url.WithParam "ticker" .Name}}"{{end}} title="last {{.Capacity}} snapshots (with interval {{.Interval}})">last {{.Duration}}</a>
+{{end }}
+</div>
 
+<div id="chart" style="width: 100%; min-height: 300px;"></div>
 
 </body>
 <script>
-$.getJSON('key/history.json?{{.rawQuery}}', function(data) {
+$.getJSON('{{.url.WithPath "key/history.json"}}', function(data) {
   document._hist = data;
   console.log('data: ', data);
 
