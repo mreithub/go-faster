@@ -46,3 +46,22 @@ func (s *Snapshot) Keys() []string {
 
 	return rc
 }
+
+// Sub -- returns the difference between the two given snapshots (assuming 'other' is the newer one)
+func (s *Snapshot) Sub(other *Snapshot) *Snapshot {
+	if other == nil {
+		return s
+	}
+	var rc = Snapshot{
+		Active:   0,   // doesn't really make sense (maybe we should use max(this, other))
+		Children: nil, // TODO should we do this recursively?
+		Count:    other.Count - s.Count,
+		Duration: other.Duration - s.Duration,
+		Ts:       s.Ts,
+	}
+	if rc.Count > 0 {
+		rc.Average = rc.Duration / time.Duration(rc.Count)
+	}
+
+	return &rc
+}
