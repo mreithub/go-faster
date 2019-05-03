@@ -105,7 +105,7 @@ func (h *History) push(snapshot *Snapshot) {
 	entries.PushBack(snapshot)
 
 	// Note: h.Capacity isn't guarded and may be changed by another goroutine while doing this
-	for entries.Len() > h.Capacity && entries.Len() > 0 {
+	for entries.Len() > h.Capacity+1 && entries.Len() > 0 {
 		entries.Remove(h.entries.Front())
 	}
 }
@@ -129,6 +129,9 @@ func NewHistory(name string, interval time.Duration, keep int, tickChannel chan 
 		interval: interval,
 		entries:  list.New(),
 	}
+
+	// get initial snapshot
+	tickChannel <- &rc
 
 	go func() {
 		for {
