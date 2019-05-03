@@ -14,10 +14,21 @@ import (
 	"github.com/mreithub/go-faster/web"
 )
 
+func basicAuthMW(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if user, pw, ok := r.BasicAuth(); ok && user == "admin" && pw == "hackme" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		w.Header().Add("WWW-Authenticate", "Basic realm=\"stats\"")
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	})
+}
+
 func indexHTML(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
-  <a href="/faster.json">faster.json</a>`))
+  <a href="/_faster/">go-faster dashboard</a>`))
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +83,11 @@ func main() {
 	var r = mux.NewRouter()
 	r.HandleFunc("/", indexHTML)
 	r.HandleFunc("/delayed.html", delayedHTML)
-	r.PathPrefix("/_faster/").Handler(web.NewHandler("/_faster/", faster.Singleton))
+
+	// add simple HTTP basic auth to the go-faster stats page (as it might expose sensitive info)
+	var s = r.PathPrefix("/_faster/").Subrouter()
+	s.Use(basicAuthMW)
+	s.NewRoute().Handler(web.NewHandler("/_faster/", faster.Singleton))
 	var handler = handlers.LoggingHandler(os.Stdout, trackRequests(r))
 
 	// set up periodic go-faster snapshots
