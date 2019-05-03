@@ -23,6 +23,9 @@ type Snapshot struct {
 	Ts time.Time `json:"ts"`
 }
 
+// Snapshots -- list of Snapshot (adding some useful helper functions)
+type Snapshots []*Snapshot
+
 // Get -- Recursively traverse this Snapshot instance returning the entry matching the given key (or nil if not found)
 func (s *Snapshot) Get(key ...string) *Snapshot {
 	if len(key) == 0 {
@@ -31,9 +34,9 @@ func (s *Snapshot) Get(key ...string) *Snapshot {
 	var head, tail = key[0], key[1:]
 	if child, ok := s.Children[head]; ok {
 		return child.Get(tail...)
-	} else {
-		return nil // not found
 	}
+
+	return nil // not found
 }
 
 // Keys -- List all keys of this read-only instance
@@ -64,4 +67,31 @@ func (s *Snapshot) Sub(other *Snapshot) *Snapshot {
 	}
 
 	return &rc
+}
+
+// Relative -- Returns a new list of Snapshots - subtracting each entry's values from the last one's
+//
+// go-faster Snapshot objects usually store absolute (and monotonically increasing) counts. This makes it easier to calculate aggregates
+// over arbitrary time ranges.
+//
+// This function however returns a list of Snapshot where each item's value is the difference between two absolute Snapshot object
+// (which is the kind of data you'd want to plot with charts).
+//
+// The returned list will be one shorter than this one (unless this one is empty or nil in which case nil is returned).
+// Calling this method more than once might result in something resembling the second, third, ... derivatives
+func (s Snapshots) Relative() Snapshots {
+	if len(s) == 0 {
+		return nil
+	}
+	var rc = make([]*Snapshot, 0, len(s)-1)
+
+	var last *Snapshot
+	for _, snap := range s {
+		if last != nil {
+			rc = append(rc, last.Sub(snap))
+		}
+		last = snap
+	}
+
+	return rc
 }

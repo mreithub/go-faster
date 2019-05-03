@@ -53,9 +53,9 @@ func (h *History) FirstTS() time.Time {
 }
 
 // ForKey -- wrapper around List() filtering for the selected key
-func (h *History) ForKey(key ...string) []*Snapshot {
+func (h *History) ForKey(key ...string) Snapshots {
 	var data = h.List()
-	var rc = make([]*Snapshot, 0, len(data))
+	var rc = make(Snapshots, 0, len(data))
 
 	for _, snapshot := range data {
 		rc = append(rc, snapshot.Get(key...))
@@ -81,7 +81,7 @@ func (h *History) Len() int {
 //
 // This method is thread safe - but the stored Snapshot values are presumed
 // immutable (and therefore not guarded by any locks)
-func (h *History) List() []*Snapshot {
+func (h *History) List() Snapshots {
 	h.entryLock.Lock()
 	defer h.entryLock.Unlock()
 
