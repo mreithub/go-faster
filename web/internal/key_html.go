@@ -31,7 +31,7 @@ var KeyHTML = `
 <div>
   Ticker:
 {{range .sortedTickers }}
-  <a {{if ne $.ticker.Name .Name}}href="{{$.url.WithParam "ticker" .Name}}"{{end}} title="last {{.Capacity}} snapshots (with interval {{.Interval}})">last {{.Duration}}</a>
+  <a {{if ne $.ticker.Name .Name}}href="{{($.url.WithPath "key").WithParam "ticker" .Name}}"{{end}} title="last {{.Capacity}} snapshots (with interval {{.Interval}})">last {{.Duration}}</a>
 {{end }}
 </div>
 
