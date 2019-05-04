@@ -27,7 +27,6 @@ var KeyHTML = `
 <button onclick="fetchData()">Reload</button>
 
 <h3>Requests</h3>
-
 <div>
   Ticker:
 {{range .sortedTickers }}
@@ -37,14 +36,15 @@ var KeyHTML = `
 
 <div id="chart" style="width: 100%; min-height: 300px;"></div>
 
+<h3>Histogram</h3>
+<div id="histogram" style="width: 100%; min-height: 300px;"></div>
+
 </body>
 <script>
 function fetchData() {
-  $.getJSON('{{.url.WithPath "key/history.json"}}', function(data) {
-    document._hist = data;
-    console.log('data: ', data);
-
-    if (data.ts == null || data.ts.length == 0) {
+  $.getJSON('{{.url.WithPath "key/info.json"}}', function(data) {
+    var req = data.requests;
+    if (req.ts == null || req.ts.length == 0) {
       if ($('#chart .nodata').length == 0) {
         $('#chart').append('<div class="nodata">:: no data ::</div>');
       }
@@ -53,15 +53,20 @@ function fetchData() {
 
     // format data the way flot expects it
     var counts = [], avgMsec = [];
-    for (var i = 0; i < data.ts.length; i++) {
-      counts.push([data.ts[i], data.counts[i]])
-      avgMsec.push([data.ts[i], data.avgMsec[i]])
+    for (var i = 0; i < req.ts.length; i++) {
+      counts.push([req.ts[i], req.counts[i]])
+      avgMsec.push([req.ts[i], req.avgMsec[i]])
+    }
+
+    var histogram = [];
+    for (var h of data.histogram) {
+      histogram.push([Math.log2(h.ns), h.count])
     }
 
     $.plot($("#chart"), [
         {
           data: counts,
-          label: "requests",
+          label: "# of calls",
           bars: {show: true, barWidth: 800, align: "center"},
         },
         {
@@ -85,11 +90,36 @@ function fetchData() {
           },
         }
       ],
-      /*legend: {
-        backgroundColor: "transparent"
-      }*/
     });
 
+    $.plot($("#histogram"), [
+        {
+          data: histogram,
+          label: "",
+          bars: {show: true, align: "center"},
+        },
+      ], {
+      xaxis: {
+        //mode: "time",
+        //timeBase: "milliseconds",
+        tickFormatter: function(v, axis) {
+          var v = Math.pow(2, v)
+          var units = ['ns', 'us', 'ms', 's']
+          var unit = 0;
+          for (var i = 0; i < units.length; i++) {
+            if (v <= 1000) break;
+            v /= 1000;
+            unit++;
+          }
+          unit = units[unit];
+
+          return v.toFixed(axis.tickDecimals) + "ms";
+        },
+      },
+      yaxis: {
+        min: 0
+      },
+    });
   })
 }
 

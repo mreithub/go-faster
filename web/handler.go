@@ -86,7 +86,7 @@ func NewHandler(faster *faster.Faster) http.Handler {
 
 	mux.HandleFunc("/", rc.indexHandler)
 	mux.Handle("/key", rc.keyPage)
-	mux.HandleFunc("/key/history.json", rc.keyPage.HistoryJSON)
+	mux.HandleFunc("/key/info.json", rc.keyPage.InfoJSON)
 	mux.HandleFunc("/snapshot.json", rc.snapshotJSON)
 
 	return &rc
