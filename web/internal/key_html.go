@@ -11,7 +11,9 @@ var KeyHTML = `
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.time.js"></script>
 
 <style>
-
+body {
+  font-family: monospace;
+}
 </style>
 </head>
 <body>
