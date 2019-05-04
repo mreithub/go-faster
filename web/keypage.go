@@ -77,7 +77,6 @@ func (p *KeyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
 		info.AvgMS = int64(snap.Average / time.Millisecond)
 		info.Total = snap.Count
 		if h := snap.Histogram; h != nil {
-			log.Print("h: ", h)
 			var durations, counts = h.GetValues()
 			if len(durations) == len(counts) {
 				for i, duration := range durations {
