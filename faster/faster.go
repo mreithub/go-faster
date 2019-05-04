@@ -32,6 +32,9 @@ type Faster struct {
 	historyLock sync.Mutex
 	// indicates a History ticker expired (and expects to be sent a new Snapshot)
 	tickChan chan *History
+
+	// StartTS -- timestamp of this Faster object's creation
+	StartTS time.Time
 }
 
 func (f *Faster) do(evType internal.EventType, path []string, took time.Duration) {
@@ -162,6 +165,7 @@ func New(withHistograms bool) *Faster {
 
 		tickChan: make(chan *History),
 		history:  make(map[string]*History),
+		StartTS:  time.Now(),
 	}
 
 	if withHistograms {
