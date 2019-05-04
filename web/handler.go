@@ -31,21 +31,6 @@ func checkMethod(w http.ResponseWriter, r *http.Request, whitelist ...string) bo
 	return false
 }
 
-func (h *WebHandler) historyJSON(w http.ResponseWriter, r *http.Request) {
-	if !checkMethod(w, r, "GET") {
-		return
-	}
-
-	var data = map[string]interface{}{}
-	for name, history := range h.faster.ListTickers() {
-		data[name] = history.Len()
-	}
-
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		log.Print("Failed to encode JSON response: ", err)
-	}
-}
-
 func (h *WebHandler) indexHandler(w http.ResponseWriter, r *http.Request) {
 	if !checkMethod(w, r, "GET") {
 		return
@@ -103,7 +88,6 @@ func NewHandler(faster *faster.Faster) http.Handler {
 	mux.Handle("/key", rc.keyPage)
 	mux.HandleFunc("/key/history.json", rc.keyPage.HistoryJSON)
 	mux.HandleFunc("/snapshot.json", rc.snapshotJSON)
-	mux.HandleFunc("/history.json", rc.historyJSON)
 
 	return &rc
 }
