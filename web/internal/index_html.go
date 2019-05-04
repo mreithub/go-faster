@@ -3,19 +3,32 @@ package internal
 // IndexHTML -- dashboard index template
 var IndexHTML = `
 <html>
-<head><title>go-faster stats</title>
+<head><title>go-faster dashboard</title>
 <style>
 body {
   font-family: monospace;
 }
 
-th { padding-left: 1em;}
+th, td { padding-left: 1em;}
+tr:hover { background-color: rgba(192,224,255,.5);}
 
 td { text-align: right; }
 td:first-child { text-align: initial; }
 </style>
 </head>
 <body>
+<h1>go-faster dashboard</h1>
+
+
+<h2>app info</h2>
+<table><tbody>
+<tr><th>app uptime</th><td title="{{.startTS}}">{{.uptime}}</td></tr>
+<tr><th>cpu</th><td>{{.cores}} cores</td></tr>
+<tr><th>goroutines</th><td>{{.goroutines}}</td></tr>
+</tbody></table>
+
+
+<h2>stats</h2>
 <table>
   <thead><tr>
     <th>Name</th>

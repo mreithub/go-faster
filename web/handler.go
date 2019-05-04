@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"runtime"
+	"time"
 
 	"github.com/mreithub/go-faster/faster"
 )
@@ -31,7 +33,7 @@ func checkMethod(w http.ResponseWriter, r *http.Request, whitelist ...string) bo
 	return false
 }
 
-func (h *WebHandler) indexHandler(w http.ResponseWriter, r *http.Request) {
+func (h *WebHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 	if !checkMethod(w, r, "GET") {
 		return
 	}
@@ -42,7 +44,11 @@ func (h *WebHandler) indexHandler(w http.ResponseWriter, r *http.Request) {
 	var data = flattenSnapshot(faster.GetSnapshot())
 	sortByPath(data)
 	var err = tpl.Execute(w, map[string]interface{}{
-		"data": data,
+		"data":       data,
+		"cores":      runtime.NumCPU(),
+		"goroutines": runtime.NumGoroutine(),
+		"uptime":     time.Now().Sub(h.faster.StartTS),
+		"startTS":    h.faster.StartTS.Format(time.RFC3339),
 	})
 
 	if err != nil {
@@ -84,7 +90,7 @@ func NewHandler(faster *faster.Faster) http.Handler {
 		},
 	}
 
-	mux.HandleFunc("/", rc.indexHandler)
+	mux.HandleFunc("/", rc.indexPage)
 	mux.Handle("/key", rc.keyPage)
 	mux.HandleFunc("/key/info.json", rc.keyPage.InfoJSON)
 	mux.HandleFunc("/snapshot.json", rc.snapshotJSON)
