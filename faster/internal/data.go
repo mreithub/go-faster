@@ -1,6 +1,10 @@
 package internal
 
-import "time"
+import (
+	"time"
+
+	"github.com/mreithub/go-faster/histogram"
+)
 
 // Data -- internal GoFaster data structure - thread unsafe (only for use in the Faster.run() goroutine)
 type Data struct {
@@ -10,6 +14,8 @@ type Data struct {
 	Count int64
 	// time spent in those invocations (in nanoseconds)
 	TotalTime time.Duration
+
+	Histogram *histogram.Histogram
 
 	// child instances
 	Children map[string]*Data
@@ -22,6 +28,16 @@ func (d *Data) Average() time.Duration {
 		rc = d.TotalTime / time.Duration(d.Count)
 	}
 	return rc
+}
+
+// Done -- caused by Tracker.Done() (and called by Faster.run())
+func (d *Data) Done(took time.Duration) {
+	d.Active--
+	d.Count++
+	d.TotalTime += took
+	if d.Histogram != nil {
+		d.Histogram.Add(took)
+	}
 }
 
 // GetChild -- Returns the Data instance matching the given path (recursively)
@@ -45,6 +61,9 @@ func (d *Data) GetChild(key ...string) *Data {
 	if child, ok = d.Children[head]; !ok {
 		child = new(Data)
 		d.Children[head] = child
+		if d.Histogram != nil {
+			child.Histogram = new(histogram.Histogram)
+		}
 	}
 	return child.GetChild(tail...)
 }

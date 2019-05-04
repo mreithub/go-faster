@@ -8,7 +8,7 @@ import (
 )
 
 func TestBasics(t *testing.T) {
-	g := New()
+	g := New(true)
 
 	g.Track("hello").Done()
 

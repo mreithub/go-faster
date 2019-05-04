@@ -3,7 +3,7 @@ package faster
 import "time"
 
 // Singleton -- global GoFaster instance
-var Singleton = New()
+var Singleton = New(true)
 
 // GetSnapshot -- Returns a Snapshot of the GoFaster (synchronously)
 func GetSnapshot() *Snapshot {

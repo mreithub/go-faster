@@ -1,6 +1,10 @@
 package faster
 
-import "time"
+import (
+	"time"
+
+	"github.com/mreithub/go-faster/histogram"
+)
 
 // Snapshot -- point-in-time copy of a GoFaster instance
 type Snapshot struct {
@@ -21,6 +25,8 @@ type Snapshot struct {
 
 	// Creation timestamp
 	Ts time.Time `json:"ts"`
+
+	Histogram *histogram.Histogram
 }
 
 // Snapshots -- list of Snapshot (adding some useful helper functions)

@@ -21,7 +21,7 @@ func BenchmarkMeasureTime(b *testing.B) {
 
 // BenchmarkTrackDone -- Measures how long an empty Track().Done() call takes
 func BenchmarkTrackDone(b *testing.B) {
-	g := New()
+	g := New(true)
 
 	for n := 0; n < b.N; n++ {
 		g.Track("hello").Done()
@@ -33,7 +33,7 @@ func BenchmarkTrackDone(b *testing.B) {
 
 // BenchmarkTrackDoneDeferred -- Measures how long an empty Track().Done() call takes (doing the Done() in a defer statement)
 func BenchmarkTrackDoneDeferred(b *testing.B) {
-	g := New()
+	g := New(true)
 
 	for n := 0; n < b.N; n++ {
 		r := g.Track("hello")
@@ -47,7 +47,7 @@ func BenchmarkTrackDoneDeferred(b *testing.B) {
 // benchmarkGetSnapshot -- Measure how long it takes to create a deep copy of the snapshot data
 func benchmarkGetSnapshot(count int, b *testing.B) {
 	// setup
-	g := New()
+	g := New(true)
 	for n := 0; n < count; n++ {
 		g.Track(fmt.Sprintf("ref%d", n)).Done()
 	}

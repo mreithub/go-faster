@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mreithub/go-faster/faster/internal"
+	"github.com/mreithub/go-faster/histogram"
 )
 
 // TODO tracking execution time might cause performance issues (e.g. in virtualized environments gettimeofday() might be slow)
@@ -82,10 +83,7 @@ func (f *Faster) run() {
 			case internal.EvTrack:
 				f.root.GetChild(msg.Path...).Active++
 			case internal.EvDone:
-				d := f.root.GetChild(msg.Path...)
-				d.Active--
-				d.Count++
-				d.TotalTime += msg.Took
+				f.root.GetChild(msg.Path...).Done(msg.Took)
 			case internal.EvSnapshot:
 				var snap = f.takeSnapshotRec(f.root, time.Now())
 				f.snapshotChannel <- snap
@@ -143,6 +141,10 @@ func (f *Faster) takeSnapshotRec(data *internal.Data, now time.Time) *Snapshot {
 		Children: children,
 	}
 
+	if data.Histogram != nil {
+		rc.Histogram = data.Histogram.Copy()
+	}
+
 	return &rc
 }
 
@@ -152,7 +154,7 @@ func (f *Faster) Reset() {
 }
 
 // New -- Construct a new root-level GoFaster instance
-func New() *Faster {
+func New(withHistograms bool) *Faster {
 	rc := &Faster{
 		root:            new(internal.Data),
 		evChannel:       make(chan internal.Event, 100),
@@ -160,6 +162,10 @@ func New() *Faster {
 
 		tickChan: make(chan *History),
 		history:  make(map[string]*History),
+	}
+
+	if withHistograms {
+		rc.root.Histogram = new(histogram.Histogram)
 	}
 	go rc.run()
 
