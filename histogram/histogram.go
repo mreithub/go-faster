@@ -60,6 +60,12 @@ func (h *Histogram) Add(value time.Duration) {
 	h.buckets[bucket]++
 }
 
+// Copy -- returns a copy of this Histogram instance
+func (h *Histogram) Copy() *Histogram {
+	var rc = *h
+	return &rc
+}
+
 // GetPercentile -- Convenience wrapper around GetPercentiles() for a single value
 func (h *Histogram) GetPercentile(value int) time.Duration {
 	return h.GetPercentiles(value)[0]
