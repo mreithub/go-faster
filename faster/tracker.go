@@ -9,7 +9,7 @@ import (
 // Tracker - Trackable instance
 //
 // Note that this struct will only work as expected when it has a backing Faster instance
-// (i.e. is acquired by calling Faster.Track())
+// (i.e. is acquired by calling Faster.Track() or NewChild())
 type Tracker struct {
 	parent  *Faster
 	path    []string
@@ -37,6 +37,26 @@ func (t *Tracker) Done() {
 
 	t.parent.do(internal.EvDone, t.path, took)
 	t.parent = nil // prevent double Done()
+}
+
+// NewChild -- creates a child with the same startTS and backing Faster instance but different path
+//
+// won't work after Done() was called on this object (will return nil)
+//
+// Make sure to call Done() on each child you create here
+func (t *Tracker) NewChild(path ...string) *Tracker {
+	if t.parent == nil {
+		return nil
+	}
+
+	var rc = Tracker{
+		parent:  t.parent,
+		path:    append(t.path, path...),
+		startTS: t.startTS,
+	}
+	t.parent.do(internal.EvTrack, rc.path, 0)
+
+	return &rc
 }
 
 // Path -- returns the Faster path this Tracker object is bound to
