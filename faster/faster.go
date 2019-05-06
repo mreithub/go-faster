@@ -71,9 +71,9 @@ func (f *Faster) Track(key ...string) *Tracker {
 	f.do(internal.EvTrack, key, 0)
 
 	return &Tracker{
-		parent:    f,
-		path:      key,
-		startTime: time.Now(),
+		parent:  f,
+		path:    key,
+		startTS: time.Now(),
 	}
 }
 
