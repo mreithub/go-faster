@@ -115,7 +115,7 @@ function fetchData() {
           }
           unit = units[unit];
 
-          return v.toFixed(axis.tickDecimals) + "ms";
+          return v.toFixed(axis.tickDecimals) + unit;
         },
       },
       yaxis: {
