@@ -28,6 +28,10 @@ func (e *entry) JSONPath() string {
 
 // formats a time.Duration as string (in msec) that can be easily parsed by the human eye when aligned right
 func (e *entry) toMsec(value time.Duration) string {
+	if value == 0 {
+		return ""
+	}
+
 	var mantissa = (value / time.Microsecond / 10) % 100 // two digits after the decimal point
 
 	var unformatted = []rune(strconv.FormatInt(int64(value/time.Millisecond), 10))
