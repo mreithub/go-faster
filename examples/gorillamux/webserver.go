@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -16,6 +17,7 @@ import (
 
 func basicAuthMW(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer faster.TrackFn().Done()
 		if user, pw, ok := r.BasicAuth(); ok && user == "admin" && pw == "hackme" {
 			next.ServeHTTP(w, r)
 			return
@@ -28,13 +30,15 @@ func basicAuthMW(next http.Handler) http.Handler {
 func indexHTML(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
-  <a href="/_faster/">go-faster dashboard</a>`))
+  <a href="/_faster/">go-faster dashboard</a> (user: <tt>admin</tt> password: <tt>hackme</tt>)`))
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {
 	foo := processStuff(r.RemoteAddr)
 	result := <-foo
 	msg := fmt.Sprintf("Incoming message: %s", result)
+
+	w.Header().Set("content-type", "text/html")
 	w.Write([]byte(msg))
 }
 
@@ -43,11 +47,11 @@ func processStuff(name string) chan string {
 
 	go func() {
 		// since processing takes some time, we'll add a separate GoFaster instance here (this time in the "app" scope)
-		r := faster.Track("app", "processing")
-		defer r.Done()
+		defer faster.TrackFn().Done()
 
-		time.Sleep(200 * time.Millisecond)
-		rc <- fmt.Sprintf("Hello %s", name)
+		var delay = time.Duration(rand.Intn(1700)) * time.Millisecond
+		time.Sleep(delay)
+		rc <- fmt.Sprintf("Hello %s, processing your request took <tt>%v</tt><br />\n<a href=\"javascript:history.back()\">back</a>", name, delay)
 	}()
 
 	return rc
