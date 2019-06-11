@@ -10,8 +10,8 @@ type Histogram struct {
 	count int64
 	sum   time.Duration
 
-	// buckets[0]
-	buckets [64]int
+	// logarithmic buckets
+	buckets [64]int32
 }
 
 // Average -- returns the average of all values stored in the Histogram
@@ -112,7 +112,7 @@ func (h *Histogram) GetPercentiles(values ...int) []time.Duration {
 // GetValues -- returns each bucket's lower bound and the number of values in it
 //
 // will skip empty buckets at the start and end
-func (h *Histogram) GetValues() ([]time.Duration, []int) {
+func (h *Histogram) GetValues() ([]time.Duration, []int32) {
 	var skipFrom, skipTo = 0, len(h.buckets)
 
 	for i, value := range h.buckets {

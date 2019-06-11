@@ -72,7 +72,7 @@ func TestMinValues(t *testing.T) {
 
 func TestHistogram(t *testing.T) {
 	var h = Histogram{
-		buckets: [64]int{1, 1, 1, 1, 1, 1, 1, 1},
+		buckets: [64]int32{1, 1, 1, 1, 1, 1, 1, 1},
 		count:   8,
 		sum:     (1 + 2 + 4 + 8 + 16 + 32 + 64 + 128) * NS,
 	}
@@ -80,7 +80,7 @@ func TestHistogram(t *testing.T) {
 	assert.EqualValues(t, []time.Duration{0, 2 * NS, 8 * NS, 32 * NS, 128 * NS}, h.GetPercentiles(0, 25, 50, 75, 100))
 
 	h = Histogram{
-		buckets: [64]int{0, 0, 0, 3, 2, 11, 8, 16, 24, 8, 2, 0},
+		buckets: [64]int32{0, 0, 0, 3, 2, 11, 8, 16, 24, 8, 2, 0},
 		count:   3 + 2 + 11 + 8 + 16 + 24 + 8 + 2,
 	}
 
