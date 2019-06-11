@@ -56,4 +56,10 @@ func TestSingleton(t *testing.T) {
 	assert.Equal(t, int64(1), d2.Count)
 	assert.True(t, d2.Duration > 0)
 	assert.Equal(t, 2, len(snap2.Children))
+
+	// test reflection
+	var tracker = TrackFn()
+	tracker.Done()
+	assert.Equal(t, []string{"src", "faster", "TestSingleton()"}, tracker.path)
+	assert.Equal(t, int64(1), GetSnapshot().Get("src", "faster", "TestSingleton()").Count)
 }

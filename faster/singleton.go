@@ -15,6 +15,12 @@ func Track(key ...string) *Tracker {
 	return Singleton.Track(key...)
 }
 
+// TrackFn -- Tracks the calling function (using ["src", "pkgName", "typeName", "fn()"] as key - omitting typeName if empty)
+func TrackFn() *Tracker {
+	var key = Singleton.getCaller(1)
+	return Singleton.Track(key...)
+}
+
 // Reset -- resets the internal state of the singleton GoFaster instance
 func Reset() {
 	Singleton.Reset()

@@ -8,32 +8,32 @@ import (
 )
 
 func TestBasics(t *testing.T) {
-	g := New(true)
+	f := New(true)
 
-	g.Track("hello").Done()
+	f.Track("hello").Done()
 
-	clone1 := g.GetSnapshot()
-	ref := g.Track("world")
+	clone1 := f.GetSnapshot()
+	ref := f.Track("world")
 	time.Sleep(100 * time.Millisecond)
-	clone2 := g.GetSnapshot()
+	clone2 := f.GetSnapshot()
 	ref.Done()
-	ref = g.Track("hello")
-	clone3 := g.GetSnapshot()
+	ref = f.Track("hello")
+	clone3 := f.GetSnapshot()
 	ref.Done()
 
 	// all the assertions are done after the fact (to make sure the different clones
 	// keep their own copies of the Data)
 
-	g.GetSnapshot() // wait for run() to catch up
+	f.GetSnapshot() // wait for run() to catch up
 
 	// final (current) state
-	assert.Contains(t, g.root.Children, "hello")
-	assert.Contains(t, g.root.Children, "world")
-	d := g.root.GetChild("hello")
+	assert.Contains(t, f.root.Children, "hello")
+	assert.Contains(t, f.root.Children, "world")
+	d := f.root.GetChild("hello")
 	assert.Equal(t, int32(0), d.Active)
 	assert.Equal(t, int64(2), d.Count)
 	assert.True(t, d.TotalTime > 0)
-	d = g.root.GetChild("world")
+	d = f.root.GetChild("world")
 	assert.Equal(t, int32(0), d.Active)
 	assert.Equal(t, int64(1), d.Count)
 	assert.True(t, d.TotalTime >= 100000000)
@@ -67,4 +67,19 @@ func TestBasics(t *testing.T) {
 	assert.True(t, d3.Duration >= 100000000)
 	assert.True(t, clone3.Children["hello"].Duration < 100000)
 	assert.NotEqual(t, d1.Duration, d3.Duration)
+}
+
+func TestTrackFn(t *testing.T) {
+	f := New(true)
+
+	var tracker = f.TrackFn()
+	tracker.Done()
+
+	assert.Equal(t, []string{"src", "faster", "TestTrackFn()"}, tracker.path)
+
+	clone := f.GetSnapshot()
+
+	assert.Contains(t, clone.Children, "src")
+	assert.Contains(t, clone.Get("src").Children, "faster")
+	assert.Contains(t, clone.Get("src", "faster").Children, "TestTrackFn()")
 }

@@ -1,6 +1,8 @@
 package faster
 
 import (
+	"regexp"
+	"runtime"
 	"sync"
 	"time"
 
@@ -45,6 +47,45 @@ func (f *Faster) do(evType internal.EventType, path []string, took time.Duration
 	}
 }
 
+// getCaller -- returns the given stack trace entry in the format we want it
+func (f *Faster) getCaller(skip int) []string {
+	pc := make([]uintptr, 5)
+	n := runtime.Callers(skip+2, pc) // also skip getCaller() and runtime.Callers()
+	if n > 0 {
+		frames := runtime.CallersFrames(pc[:n])
+		for { // iterate over frames
+			frame, more := frames.Next()
+
+			if fn := frame.Function; fn != "" {
+				return f.parseCaller(fn)
+			}
+			if !more {
+				break
+			}
+		}
+	}
+
+	return []string{"src"} // couldn't determine caller -> track using the top level '/src' key
+}
+
+// frame.Function is in the format "qualified/package/name.(*type).function"
+// (with type being optional - and the '(*)' only there for pointer receivers)
+var callerPattern = regexp.MustCompile("([^/.]+)(\\.([^./]+))?\\.([^./]+)$")
+
+func (*Faster) parseCaller(fn string) []string {
+	var groups = callerPattern.FindStringSubmatch(fn)
+	if len(groups) == 0 {
+		return []string{"src"}
+	}
+
+	var pkg, typeName, function = groups[1], groups[3], groups[4]
+
+	if typeName == "" {
+		return []string{"src", pkg, function + "()"}
+	}
+	return []string{"src", pkg, typeName, function + "()"}
+}
+
 // SetTicker -- Sets up periodic snapshots
 //
 // - name is the unique name of the given History ticker
@@ -75,6 +116,12 @@ func (f *Faster) Track(key ...string) *Tracker {
 		path:    key,
 		startTS: time.Now(),
 	}
+}
+
+// TrackFn -- Tracks the calling function (using ["src", "pkgName", "typeName", "fn()"] as key - omitting typeName if empty)
+func (f *Faster) TrackFn() *Tracker {
+	var key = f.getCaller(1)
+	return f.Track(key...)
 }
 
 func (f *Faster) run() {
