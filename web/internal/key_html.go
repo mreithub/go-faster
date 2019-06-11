@@ -50,49 +50,50 @@ function fetchData() {
       if ($('#chart .nodata').length == 0) {
         $('#chart').append('<div class="nodata">:: no data ::</div>');
       }
-      return;
-    } else $('#chart .nodata').remove();
+    } else {
+      $('#chart .nodata').remove();
 
-    // format data the way flot expects it
-    var counts = [], avgMsec = [];
-    for (var i = 0; i < req.ts.length; i++) {
-      counts.push([req.ts[i], req.counts[i]])
-      avgMsec.push([req.ts[i], req.avgMsec[i]])
+      // format data the way flot expects it
+      var counts = [], avgMsec = [];
+      for (var i = 0; i < req.ts.length; i++) {
+        counts.push([req.ts[i], req.counts[i]])
+        avgMsec.push([req.ts[i], req.avgMsec[i]])
+      }
+
+      $.plot($("#chart"), [
+          {
+            data: counts,
+            label: "# of calls",
+            bars: {show: true, barWidth: 800, align: "center"},
+          },
+          {
+            data: avgMsec,
+            label: "average duration",
+            yaxis: 2,
+          },
+        ], {
+        xaxis: {
+          mode: "time",
+          timeBase: "milliseconds",
+        },
+        yaxes: [
+          {min: 0},
+          {
+            min: 0,
+            alignTicksWithAxis: 1,
+            position: "right",
+            tickFormatter: function(v, axis) {
+              return v.toFixed(axis.tickDecimals) + "ms";
+            },
+          }
+        ],
+      });
     }
 
     var histogram = [];
     for (var h of data.histogram) {
       histogram.push([Math.log2(h.ns), h.count])
     }
-
-    $.plot($("#chart"), [
-        {
-          data: counts,
-          label: "# of calls",
-          bars: {show: true, barWidth: 800, align: "center"},
-        },
-        {
-          data: avgMsec,
-          label: "average duration",
-          yaxis: 2,
-        },
-      ], {
-      xaxis: {
-        mode: "time",
-        timeBase: "milliseconds",
-      },
-      yaxes: [
-        {min: 0},
-        {
-          min: 0,
-          alignTicksWithAxis: 1,
-          position: "right",
-          tickFormatter: function(v, axis) {
-            return v.toFixed(axis.tickDecimals) + "ms";
-          },
-        }
-      ],
-    });
 
     $.plot($("#histogram"), [
         {
