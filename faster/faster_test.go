@@ -69,17 +69,20 @@ func TestBasics(t *testing.T) {
 	assert.NotEqual(t, d1.Duration, d3.Duration)
 }
 
-func TestTrackFn(t *testing.T) {
+func TestReflection(t *testing.T) {
 	f := New(true)
 
 	var tracker = f.TrackFn()
 	tracker.Done()
 
-	assert.Equal(t, []string{"src", "faster", "TestTrackFn()"}, tracker.path)
+	assert.Equal(t, []string{"src", "faster", "TestReflection()"}, tracker.path)
 
 	clone := f.GetSnapshot()
 
 	assert.Contains(t, clone.Children, "src")
 	assert.Contains(t, clone.Get("src").Children, "faster")
-	assert.Contains(t, clone.Get("src", "faster").Children, "TestTrackFn()")
+	assert.Contains(t, clone.Get("src", "faster").Children, "TestReflection()")
+
+	assert.Equal(t, []string{"src", "foo", "Bar", "*Func()"}, f.parseCaller("github.com/mreithub/foo.(*Bar).Func"))
+	assert.Equal(t, []string{"src", "foo", "Func()"}, f.parseCaller("github.com/mreithub/foo.Func"))
 }

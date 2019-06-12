@@ -1,8 +1,8 @@
 package faster
 
 import (
-	"regexp"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -65,25 +65,39 @@ func (f *Faster) getCaller(skip int) []string {
 		}
 	}
 
-	return []string{"src"} // couldn't determine caller -> track using the top level '/src' key
+	return []string{"src"} // couldn't determine caller -> track using the top level 'src' key
 }
 
-// frame.Function is in the format "qualified/package/name.(*type).function"
-// (with type being optional - and the '(*)' only there for pointer receivers)
-var callerPattern = regexp.MustCompile("([^/.]+)(\\.([^./]+))?\\.([^./]+)$")
-
 func (*Faster) parseCaller(fn string) []string {
-	var groups = callerPattern.FindStringSubmatch(fn)
-	if len(groups) == 0 {
-		return []string{"src"}
+	// frame.Function is in the format "golang.org/qualified/package.(*type).function"
+	// (with type being optional - and the '(*)' only there for pointer receivers)
+
+	// -> we're only interested in the stuff after the last slash
+	var parts = strings.Split(fn, "/")
+	fn = parts[len(parts)-1]
+
+	parts = strings.Split(fn, ".")
+	var rc = make([]string, 0, len(parts)+1)
+	rc = append(rc, "src")
+
+	if len(parts) == 2 {
+		// "package.function"
+		rc = append(rc, parts[0], parts[1]+"()")
+	} else if len(parts) == 3 {
+		// "package.type.function"
+		var typeName = parts[1]
+		fn = parts[2] + "()"
+		if strings.HasPrefix(typeName, "(*") && strings.HasSuffix(typeName, ")") {
+			// "package.(*type).function()" -> "package.type.*function()"
+			// (we don't want two entries - "(*type)" and "type" - for types that have methods with both value and pointer receivers)
+			typeName = typeName[2 : len(typeName)-1]
+			fn = "*" + fn
+		}
+
+		rc = append(rc, parts[0], typeName, fn)
 	}
 
-	var pkg, typeName, function = groups[1], groups[3], groups[4]
-
-	if typeName == "" {
-		return []string{"src", pkg, function + "()"}
-	}
-	return []string{"src", pkg, typeName, function + "()"}
+	return rc
 }
 
 // SetTicker -- Sets up periodic snapshots
