@@ -33,6 +33,19 @@ func (n *Tree) getNode(path ...string) *Tree {
 
 }
 
+// Children -- returns the names of the direct children of the given path
+func (n *Tree) Children(path ...string) []string {
+	var node = n.getNode(path...)
+	if node != nil {
+		var rc = make([]string, 0, len(node.children))
+		for k := range node.children {
+			rc = append(rc, k)
+		}
+		return rc
+	}
+	return nil
+}
+
 // Exists -- returns true if the given tree node exists
 func (n *Tree) Exists(path ...string) bool {
 	return n.getNode(path...) != nil
@@ -45,12 +58,4 @@ func (n *Tree) GetIndex(path ...string) int {
 		return node.index
 	}
 	return -1
-}
-
-func (n *Tree) Keys() []string {
-	var rc = make([]string, 0, len(n.children))
-	for k := range n.children {
-		rc = append(rc, k)
-	}
-	return rc
 }
