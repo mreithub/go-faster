@@ -28,6 +28,16 @@ func (t *Tree) Clone() *TreeNode {
 	return rc
 }
 
+// Exists -- returns true if the path already exists
+func (t *Tree) Exists(path ...string) bool {
+	// maybe: if len(path) == 0 { return true }
+	if t.root == nil {
+		return false
+	}
+
+	return t.root.Exists(path...)
+}
+
 // GetIndex -- returns the sequential index assigned to the given path
 // (will create nodes recursively)
 func (t *Tree) GetIndex(path ...string) int {
@@ -74,6 +84,11 @@ func (n *TreeNode) cloneRec() *TreeNode {
 		rc.Children[key] = child.cloneRec()
 	}
 	return &rc
+}
+
+// Exists -- returns true if the given tree node exists (synonymous to GetIndex(path) >= 0)
+func (n *TreeNode) Exists(path ...string) bool {
+	return n.GetIndex(path...) >= 0
 }
 
 // GetIndex -- returns the index of the given path (if found, -1 otherwise)
