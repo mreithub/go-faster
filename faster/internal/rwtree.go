@@ -37,29 +37,29 @@ func (t *RWTree) Exists(path ...string) bool {
 func (t *RWTree) GetIndex(path ...string) int {
 	if t.root == nil {
 		t.root = &Tree{
-			Index: t.nextIndex(), // 0
+			index: t.nextIndex(), // 0
 		}
 	}
 
 	var curNode = t.root
 	for len(path) > 0 {
-		if curNode.Children == nil {
-			curNode.Children = make(map[string]*Tree)
+		if curNode.children == nil {
+			curNode.children = make(map[string]*Tree)
 		}
 
 		var child *Tree
 		var ok bool
-		if child, ok = curNode.Children[path[0]]; !ok {
+		if child, ok = curNode.children[path[0]]; !ok {
 			child = &Tree{
-				Index: t.nextIndex(),
+				index: t.nextIndex(),
 			}
-			curNode.Children[path[0]] = child
+			curNode.children[path[0]] = child
 		}
 
 		curNode = child
 		path = path[1:]
 	}
-	return curNode.Index
+	return curNode.index
 }
 
 // Reset -- removes all nodes and resets the sequential index to 0
