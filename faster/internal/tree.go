@@ -20,18 +20,29 @@ func (n *Tree) cloneRec() *Tree {
 	return &rc
 }
 
-// Exists -- returns true if the given tree node exists (synonymous to GetIndex(path) >= 0)
+// getNode -- recursively traverses the tree to find the node with the given path (returns nil if not found)
+func (n *Tree) getNode(path ...string) *Tree {
+	if len(path) == 0 {
+		return n
+	}
+
+	if child, ok := n.children[path[0]]; ok {
+		return child.getNode(path[1:]...)
+	}
+	return nil
+
+}
+
+// Exists -- returns true if the given tree node exists
 func (n *Tree) Exists(path ...string) bool {
-	return n.GetIndex(path...) >= 0
+	return n.getNode(path...) != nil
 }
 
 // GetIndex -- returns the index of the given path (if found, -1 otherwise)
 func (n *Tree) GetIndex(path ...string) int {
-	if len(path) == 0 {
-		return n.index
-	}
-	if child, ok := n.children[path[0]]; ok {
-		return child.GetIndex(path[1:]...)
+	var node = n.getNode(path...)
+	if node != nil {
+		return node.index
 	}
 	return -1
 }

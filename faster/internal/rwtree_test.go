@@ -21,4 +21,13 @@ func TestTree(t *testing.T) {
 	assert.Equal(t, 1, tree.GetIndex("_faster"))
 	assert.Equal(t, 2, tree.GetIndex("_faster", "key"))
 	assert.Equal(t, 4, tree.GetIndex("http"))
+
+	assert.True(t, tree.Exists())
+	assert.True(t, tree.Exists("_faster", "key", "foobar"))
+	assert.False(t, tree.Exists("_faster", "key", "value"))
+
+	assert.Equal(t, tree.root.GetIndex("_faster"), 1)
+	assert.Equal(t, tree.root.GetIndex("_faster", "key"), 2)
+	assert.Equal(t, tree.root.GetIndex("_faster", "key", "foobar"), 7)
+	assert.Equal(t, tree.root.GetIndex("_faster", "key", "foobar", "bak"), -1)
 }
