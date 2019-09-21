@@ -3,15 +3,15 @@ package internal
 // Tree -- read only struct that maps hierarchical paths to integer indexes
 //
 // indexes are positive numbers (with 0 being the index of the root node)
-type TreeNode struct {
+type Tree struct {
 	Index    int
-	Children map[string]*TreeNode
+	Children map[string]*Tree
 }
 
-func (n *TreeNode) cloneRec() *TreeNode {
-	var rc = TreeNode{
+func (n *Tree) cloneRec() *Tree {
+	var rc = Tree{
 		Index:    n.Index,
-		Children: make(map[string]*TreeNode, len(n.Children)),
+		Children: make(map[string]*Tree, len(n.Children)),
 	}
 
 	for key, child := range n.Children {
@@ -21,12 +21,12 @@ func (n *TreeNode) cloneRec() *TreeNode {
 }
 
 // Exists -- returns true if the given tree node exists (synonymous to GetIndex(path) >= 0)
-func (n *TreeNode) Exists(path ...string) bool {
+func (n *Tree) Exists(path ...string) bool {
 	return n.GetIndex(path...) >= 0
 }
 
 // GetIndex -- returns the index of the given path (if found, -1 otherwise)
-func (n *TreeNode) GetIndex(path ...string) int {
+func (n *Tree) GetIndex(path ...string) int {
 	if len(path) == 0 {
 		return n.Index
 	}
@@ -36,7 +36,7 @@ func (n *TreeNode) GetIndex(path ...string) int {
 	return -1
 }
 
-func (n *TreeNode) Keys() []string {
+func (n *Tree) Keys() []string {
 	var rc = make([]string, 0, len(n.Children))
 	for k := range n.Children {
 		rc = append(rc, k)

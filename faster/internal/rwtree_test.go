@@ -9,7 +9,7 @@ import (
 // TestTree -- creates a tree and checks if the expected indexes get returned
 // (indexes are assigned in the order of the nodes' creation)
 func TestTree(t *testing.T) {
-	var tree Tree
+	var tree RWTree
 
 	assert.Equal(t, 3, tree.GetIndex("_faster", "key", "info.json")) // 1 2 3
 	assert.Equal(t, 5, tree.GetIndex("http", "GET /robots.txt"))     // 4 5

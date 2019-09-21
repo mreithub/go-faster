@@ -3,7 +3,7 @@ package internal
 // RWTree -- read/write wrapper around the read-only TreeNode struct
 type RWTree struct {
 	curIndex int
-	root     *TreeNode
+	root     *Tree
 }
 
 // nextIndex -- increments .curIndex, returning the old value
@@ -13,11 +13,9 @@ func (t *RWTree) nextIndex() int {
 	return rc
 }
 
-// Clone -- create a deep copy of this Tree object
-//
-// TODO there is potential for optimizations here (e.g. `make([]treeNode, t.curIndex+1` and using that )
-func (t *RWTree) Clone() *TreeNode {
-	var rc *TreeNode
+// Clone -- returns a read-only deep copy of the internal Tree structure
+func (t *RWTree) Clone() *Tree {
+	var rc *Tree
 	if t.root != nil {
 		rc = t.root.cloneRec()
 	}
@@ -38,7 +36,7 @@ func (t *RWTree) Exists(path ...string) bool {
 // (will create new tree nodes recursively)
 func (t *RWTree) GetIndex(path ...string) int {
 	if t.root == nil {
-		t.root = &TreeNode{
+		t.root = &Tree{
 			Index: t.nextIndex(), // 0
 		}
 	}
@@ -46,13 +44,13 @@ func (t *RWTree) GetIndex(path ...string) int {
 	var curNode = t.root
 	for len(path) > 0 {
 		if curNode.Children == nil {
-			curNode.Children = make(map[string]*TreeNode)
+			curNode.Children = make(map[string]*Tree)
 		}
 
-		var child *TreeNode
+		var child *Tree
 		var ok bool
 		if child, ok = curNode.Children[path[0]]; !ok {
-			child = &TreeNode{
+			child = &Tree{
 				Index: t.nextIndex(),
 			}
 			curNode.Children[path[0]] = child
