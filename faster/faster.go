@@ -182,8 +182,23 @@ func (f *Faster) getDataForPath(path ...string) *data {
 	return f.getData(index)
 }
 
+func (f *Faster) getHistogram(index int) *Histogram {
+	if !f.withHistograms {
+		return nil
+	}
+	if index >= len(f.histograms) {
+		f.histograms = append(f.histograms, make([]Histogram, index-len(f.histograms)+1)...)
+	}
+	return &f.histograms[index]
+}
+
 func (f *Faster) onDone(path []string, took time.Duration) {
-	f.getDataForPath(path...).Done(took)
+	var index = f.tree.GetIndex(path...)
+
+	f.getData(index).Done(took)
+	if h := f.getHistogram(index); h != nil {
+		h.Add(took)
+	}
 }
 
 func (f *Faster) onReset() {

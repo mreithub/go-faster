@@ -73,25 +73,27 @@ func (p *KeyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if snap := p.faster.TakeSnapshot().Get(key...); snap != nil {
-		info.Active = snap.Active()
-		info.AvgMS = int64(snap.Average() / time.Millisecond)
-		info.Total = snap.Count()
-		/*		if h := snap.Histogram; h != nil {
-				var durations, counts = h.GetValues()
-				if len(durations) == len(counts) {
-					for i, duration := range durations {
-						var count = counts[i]
+	var snap = p.faster.TakeSnapshot()
+	if datapoint := snap.Get(key...); datapoint != nil {
+		info.Active = datapoint.Active()
+		info.AvgMS = int64(datapoint.Average() / time.Millisecond)
+		info.Total = datapoint.Count()
+	}
 
-						var data = map[string]interface{}{
-							"duration": duration.String(),
-							"ns":       duration / time.Nanosecond,
-							"count":    count,
-						}
-						info.Histogram = append(info.Histogram, data)
-					}
+	if h := snap.GetHistogram(key...); h != nil {
+		var durations, counts = h.GetValues()
+		if len(durations) == len(counts) {
+			for i, duration := range durations {
+				var count = counts[i]
+
+				var data = map[string]interface{}{
+					"duration": duration.String(),
+					"ns":       duration / time.Nanosecond,
+					"count":    count,
 				}
-			}*/
+				info.Histogram = append(info.Histogram, data)
+			}
+		}
 	}
 
 	w.Header().Set("Content-type", "application/json")

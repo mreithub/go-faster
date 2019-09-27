@@ -37,3 +37,17 @@ func (s *Snapshot) Get(path ...string) DataPoint {
 	}
 	return rc
 }
+
+// GetHistogram -- returns the histogram for the given key (or nil if not found/disabled)
+func (s *Snapshot) GetHistogram(path ...string) *Histogram {
+	var rc *Histogram
+	if s.tree == nil || len(s.histograms) == 0 {
+		return nil
+	}
+
+	var index = s.tree.GetIndex(path...)
+	if index >= 0 && index < len(s.histograms) {
+		rc = &s.histograms[index]
+	}
+	return rc
+}
