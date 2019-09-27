@@ -1,4 +1,4 @@
-package histogram
+package faster
 
 import "time"
 

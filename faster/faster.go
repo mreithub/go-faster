@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/mreithub/go-faster/faster/internal"
-	"github.com/mreithub/go-faster/histogram"
 )
 
 // TODO tracking execution time might cause performance issues (e.g. in virtualized environments gettimeofday() might be slow)
@@ -17,7 +16,7 @@ import (
 type Faster struct {
 	tree       internal.RWTree
 	data       []internal.Data
-	histograms []histogram.Histogram
+	histograms []Histogram
 
 	withHistograms bool
 
@@ -224,7 +223,7 @@ func (f *Faster) takeSnapshot(now time.Time) *Snapshot {
 	var rc = Snapshot{
 		tree:       f.tree.Clone(),
 		data:       make([]internal.Data, len(f.data)),
-		histograms: make([]histogram.Histogram, len(f.histograms)),
+		histograms: make([]Histogram, len(f.histograms)),
 		TS:         now,
 	}
 	copy(rc.data, f.data)
