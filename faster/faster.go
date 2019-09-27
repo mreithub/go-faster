@@ -236,10 +236,22 @@ func (f *Faster) Reset() {
 	f.do(internal.EvReset, nil, 0)
 }
 
+// SetLimit -- set a limit for go-faster data points (i.e. tree nodes)
+//
+// Everything exceeding that limit will end up in the root path "_overflow".
+// Set to <0 to disable (note that this might cause memory issues if used with unchecked input)
+// Defaults to 1000
+func (f *Faster) SetLimit(newLimit int) {
+	f.tree.Limit = newLimit
+}
+
 // New -- Construct a new root-level GoFaster instance
 func New(withHistograms bool) *Faster {
 	rc := &Faster{
 		withHistograms: withHistograms,
+		tree: internal.RWTree{
+			Limit: 1000,
+		},
 
 		evChannel:       make(chan internal.Event, 100),
 		snapshotChannel: make(chan *Snapshot, 5),
