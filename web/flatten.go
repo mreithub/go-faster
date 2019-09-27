@@ -13,7 +13,7 @@ import (
 type entry struct {
 	Name string
 	Path []string
-	Data faster.Data
+	Data faster.DataPoint
 }
 
 // Key -- returns Path + Name
@@ -53,7 +53,7 @@ func (e *entry) PrettyAverage() string {
 }
 
 func (e *entry) PrettyTotal() string {
-	return e.toMsec(e.Data.TotalTime)
+	return e.toMsec(e.Data.TotalTime())
 }
 
 func flattenSnapshot(snap *faster.Snapshot) []entry {
@@ -66,7 +66,7 @@ func recFlattenSnapshot(rc []entry, snap *faster.Snapshot, pathPrefix []string) 
 			rc = append(rc, entry{
 				Name: k,
 				Path: pathPrefix,
-				Data: *d,
+				Data: d,
 			})
 		}
 	}

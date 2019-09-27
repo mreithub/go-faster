@@ -30,21 +30,21 @@ func TestBasics(t *testing.T) {
 	assert.True(t, f.tree.Exists("hello"))
 	assert.True(t, f.tree.Exists("world"))
 	d := f.data[f.tree.GetIndex("hello")]
-	assert.Equal(t, int32(0), d.Active)
-	assert.Equal(t, int64(2), d.Count)
-	assert.True(t, d.TotalTime > 0)
+	assert.Equal(t, int32(0), d.Active())
+	assert.Equal(t, int64(2), d.Count())
+	assert.True(t, d.TotalTime() > 0)
 	d = f.data[f.tree.GetIndex("world")]
-	assert.Equal(t, int32(0), d.Active)
-	assert.Equal(t, int64(1), d.Count)
-	assert.True(t, d.TotalTime >= 100000000)
+	assert.Equal(t, int32(0), d.Active())
+	assert.Equal(t, int64(1), d.Count())
+	assert.True(t, d.TotalTime() >= 100000000)
 
 	// snap1: Track('hello'), Done('hello')
 	assert.True(t, snap1.tree.Exists("hello"))
 	assert.False(t, snap1.tree.Exists("world"))
 	d1 := snap1.Get("hello")
-	assert.Equal(t, int32(0), d1.Active)
-	assert.Equal(t, int64(1), d1.Count)
-	assert.True(t, d1.TotalTime > 0)
+	assert.Equal(t, int32(0), d1.Active())
+	assert.Equal(t, int64(1), d1.Count())
+	assert.True(t, d1.TotalTime() > 0)
 	assert.Equal(t, 0, snap1.tree.GetIndex())
 	assert.Equal(t, 1, snap1.tree.GetIndex("hello"))
 	assert.Equal(t, -1, snap1.tree.GetIndex("world"))
@@ -54,19 +54,19 @@ func TestBasics(t *testing.T) {
 	assert.True(t, snap2.tree.Exists("hello"))
 	assert.True(t, snap2.tree.Exists("world"))
 	d2 := snap2.Get("world")
-	assert.Equal(t, int32(1), d2.Active)
-	assert.Equal(t, int64(0), d2.Count)
-	assert.Equal(t, time.Duration(0), d2.TotalTime)
+	assert.Equal(t, int32(1), d2.Active())
+	assert.Equal(t, int64(0), d2.Count())
+	assert.Equal(t, time.Duration(0), d2.TotalTime())
 
 	// snap3: snap2 + Done('world'), Track('hello')
 	assert.True(t, snap3.tree.Exists("hello"))
 	assert.True(t, snap3.tree.Exists("world"))
 	d3 := snap3.Get("world")
-	assert.Equal(t, int32(0), d3.Active)
-	assert.Equal(t, int64(1), d3.Count)
-	assert.True(t, d3.TotalTime >= 100*time.Millisecond)
-	assert.True(t, snap3.Get("hello").TotalTime < 100*time.Microsecond) // arbitrary value, but should be longer than we need
-	assert.NotEqual(t, d1.TotalTime, d3.TotalTime)
+	assert.Equal(t, int32(0), d3.Active())
+	assert.Equal(t, int64(1), d3.Count())
+	assert.True(t, d3.TotalTime() >= 100*time.Millisecond)
+	assert.True(t, snap3.Get("hello").TotalTime() < 100*time.Microsecond) // arbitrary value, but should be longer than we need
+	assert.NotEqual(t, d1.TotalTime(), d3.TotalTime())
 }
 
 func TestReflection(t *testing.T) {

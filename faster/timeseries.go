@@ -2,8 +2,6 @@ package faster
 
 import (
 	"time"
-
-	"github.com/mreithub/go-faster/faster/internal"
 )
 
 // TimeSeries -- excerpt from a History
@@ -11,7 +9,7 @@ type TimeSeries struct {
 	// Path -- path of the time series
 	Path []string
 	// Data -- data over time (index 0 was taken at StartTS)
-	Data []internal.Data
+	Data []DataPoint
 	// StartTS -- timestamp of the first Data point
 	StartTS time.Time
 	// Interval -- interval between Data points (note that )
@@ -41,14 +39,14 @@ func (s TimeSeries) Relative() TimeSeries {
 	}
 
 	var rc = TimeSeries{
-		Data:     make([]internal.Data, 0, len(s.Data)-1),
+		Data:     make([]DataPoint, 0, len(s.Data)-1),
 		Interval: s.Interval,
 		Path:     s.Path,
 		StartTS:  s.StartTS, // TODO think about modifying the timestamps (i.e. startTS += interval/2)
 	}
 
 	for i := 1; i < len(s.Data); i++ {
-		rc.Data = append(rc.Data, s.Data[i].Sub(&s.Data[i-1]))
+		rc.Data = append(rc.Data, s.Data[i].Sub(s.Data[i-1]))
 	}
 
 	return rc

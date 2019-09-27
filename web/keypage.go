@@ -58,7 +58,7 @@ func (p *KeyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
 		var timeseries = selectedTicker.GetData(key...).Relative()
 		for i, snap := range timeseries.Data {
 			req.TS = append(req.TS, timeseries.GetTimestamp(i).UnixNano()/int64(time.Millisecond))
-			req.Counts = append(req.Counts, snap.Count)
+			req.Counts = append(req.Counts, snap.Count())
 			req.AvgMsec = append(req.AvgMsec, int64(snap.Average()/time.Millisecond))
 		}
 
@@ -74,9 +74,9 @@ func (p *KeyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if snap := p.faster.TakeSnapshot().Get(key...); snap != nil {
-		info.Active = snap.Active
+		info.Active = snap.Active()
 		info.AvgMS = int64(snap.Average() / time.Millisecond)
-		info.Total = snap.Count
+		info.Total = snap.Count()
 		/*		if h := snap.Histogram; h != nil {
 				var durations, counts = h.GetValues()
 				if len(durations) == len(counts) {

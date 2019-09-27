@@ -15,7 +15,7 @@ import (
 // Faster -- A simple, go-style key-based reference counter that can be used for profiling your application (main class)
 type Faster struct {
 	tree       internal.RWTree
-	data       []internal.Data
+	data       []data
 	histograms []Histogram
 
 	withHistograms bool
@@ -169,15 +169,15 @@ func (f *Faster) run() {
 }
 
 // getData -- returns a pointer to the internal.Data object with the given index (extending f.data if necessary)
-func (f *Faster) getData(index int) *internal.Data {
+func (f *Faster) getData(index int) *data {
 	if index >= len(f.data) {
-		f.data = append(f.data, make([]internal.Data, index-len(f.data)+1)...)
+		f.data = append(f.data, make([]data, index-len(f.data)+1)...)
 	}
 	return &f.data[index]
 }
 
 // getDataForPath -- returns a pointer to the internal.Data object with the given path (or creates it if necessary)
-func (f *Faster) getDataForPath(path ...string) *internal.Data {
+func (f *Faster) getDataForPath(path ...string) *data {
 	var index = f.tree.GetIndex(path...)
 	return f.getData(index)
 }
@@ -193,7 +193,7 @@ func (f *Faster) onReset() {
 }
 
 func (f *Faster) onTrack(path []string) {
-	f.getDataForPath(path...).Active++
+	f.getDataForPath(path...).active++
 }
 
 // ListTickers -- returns the (currently registered) History tickers (taking periodic snapshots)
@@ -218,11 +218,10 @@ func (f *Faster) TakeSnapshot() *Snapshot {
 // takeSnapshot -- internal (-> thread-unsafe) method taking a deep copy of the current state
 //
 // should only ever be called from within the run() goroutine
-// 'now' is passed all the way down
 func (f *Faster) takeSnapshot(now time.Time) *Snapshot {
 	var rc = Snapshot{
 		tree:       f.tree.Clone(),
-		data:       make([]internal.Data, len(f.data)),
+		data:       make([]data, len(f.data)),
 		histograms: make([]Histogram, len(f.histograms)),
 		TS:         now,
 	}

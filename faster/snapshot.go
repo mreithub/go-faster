@@ -4,14 +4,13 @@ import (
 	"time"
 
 	"github.com/mreithub/go-faster/faster/internal"
-	"github.com/mreithub/go-faster/histogram"
 )
 
 // Snapshot -- point-in-time copy of go-faster's state
 type Snapshot struct {
 	tree       *internal.Tree
-	data       []internal.Data
-	histograms []histogram.Histogram
+	data       []data
+	histograms []Histogram
 
 	// Creation timestamp
 	TS time.Time `json:"ts"`
@@ -26,8 +25,8 @@ func (s *Snapshot) Children(path ...string) []string {
 }
 
 // Get -- Return the entry matching the given key (or nil if not found)
-func (s *Snapshot) Get(path ...string) *internal.Data {
-	var rc *internal.Data
+func (s *Snapshot) Get(path ...string) DataPoint {
+	var rc DataPoint
 	if s.tree == nil {
 		return nil
 	}
