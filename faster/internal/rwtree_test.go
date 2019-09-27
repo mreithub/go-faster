@@ -31,3 +31,24 @@ func TestTree(t *testing.T) {
 	assert.Equal(t, tree.root.GetIndex("_faster", "key", "foobar"), 7)
 	assert.Equal(t, tree.root.GetIndex("_faster", "key", "foobar", "bak"), -1)
 }
+
+func TestLimit(t *testing.T) {
+	var tree = RWTree{Limit: 5}
+
+	assert.Equal(t, 2, tree.GetIndex("_faster", "key"))           // 1 2
+	assert.Equal(t, 4, tree.GetIndex("http", "GET /robots.txt"))  // 3 4
+	assert.Equal(t, 5, tree.GetIndex("http", "GET /favicon.ico")) // 3 5(overflow)
+	assert.Equal(t, 5, tree.GetIndex("_faster", "key", "foobar")) // 1 2 5(overflow)
+	assert.Equal(t, 5, tree.GetIndex("https"))                    // 5(overflow)
+
+	assert.Contains(t, tree.root.children, "_faster")
+	assert.Contains(t, tree.root.children, "http")
+	assert.Contains(t, tree.root.children, "_overflow")
+	assert.Equal(t, 3, len(tree.root.children))
+
+	assert.True(t, tree.Exists("_faster", "key"))
+	assert.False(t, tree.Exists("_faster", "key", "foobar"))
+	assert.True(t, tree.Exists("http", "GET /robots.txt"))
+	assert.False(t, tree.Exists("http", "GET /favicon.ico"))
+	assert.False(t, tree.Exists("https"))
+}

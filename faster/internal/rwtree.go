@@ -4,12 +4,22 @@ package internal
 type RWTree struct {
 	curIndex int
 	root     *Tree
+
+	// Limit -- after curIndex reached this Limit, a catch-all root node named '_overflow'
+	// will be created.
+	//
+	// any attempt to create new nodes will return the index of that overflow node
+	//
+	// set to <= 0 to disable
+	Limit int
 }
 
 // nextIndex -- increments .curIndex, returning the old value
-func (t *RWTree) nextIndex() int {
+func (t *RWTree) nextIndex(ignoreLimit bool) int {
 	var rc = t.curIndex
-	t.curIndex++
+	if ignoreLimit || t.Limit <= 0 || rc < t.Limit {
+		t.curIndex++
+	}
 	return rc
 }
 
@@ -37,7 +47,7 @@ func (t *RWTree) Exists(path ...string) bool {
 func (t *RWTree) GetIndex(path ...string) int {
 	if t.root == nil {
 		t.root = &Tree{
-			index: t.nextIndex(), // 0
+			index: t.nextIndex(false), // 0
 		}
 	}
 
@@ -50,16 +60,40 @@ func (t *RWTree) GetIndex(path ...string) int {
 		var child *Tree
 		var ok bool
 		if child, ok = curNode.children[path[0]]; !ok {
-			child = &Tree{
-				index: t.nextIndex(),
+			var nextIndex = t.nextIndex(false)
+			if t.Limit <= 0 || nextIndex < t.Limit {
+				child = &Tree{
+					index: nextIndex,
+				}
+				curNode.children[path[0]] = child
+			} else {
+				return t.getOverflowIndex()
 			}
-			curNode.children[path[0]] = child
 		}
 
 		curNode = child
 		path = path[1:]
 	}
 	return curNode.index
+}
+
+// getOverflowIndex -- returns the index of the root tree entry '_overflow' (creates the node if neccessary)
+func (t *RWTree) getOverflowIndex() int {
+	if t.root == nil {
+		t.root = &Tree{
+			index: t.nextIndex(true), // 0
+		}
+	}
+
+	var node *Tree
+	if node = t.root.children["_overflow"]; node == nil {
+		node = &Tree{
+			index: t.nextIndex(true),
+		}
+		t.root.children["_overflow"] = node
+	}
+
+	return node.index
 }
 
 // Reset -- removes all nodes and resets the sequential index to 0
