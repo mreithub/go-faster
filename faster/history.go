@@ -4,6 +4,8 @@ import (
 	"container/list"
 	"sync"
 	"time"
+
+	"github.com/mreithub/go-faster/faster/internal"
 )
 
 // History -- periodically takes snapshots of GoFaster instances
@@ -47,18 +49,25 @@ func (h *History) First() *Snapshot {
 func (h *History) FirstTS() time.Time {
 	var rc time.Time
 	if s := h.First(); s != nil {
-		rc = s.Ts
+		rc = s.TS
 	}
 	return rc
 }
 
-// ForKey -- wrapper around List() filtering for the selected key
-func (h *History) ForKey(key ...string) Snapshots {
+// GetData -- returns the TimeSeries for the given key
+func (h *History) GetData(path ...string) TimeSeries {
 	var data = h.List()
-	var rc = make(Snapshots, 0, len(data))
+	var rc = TimeSeries{
+		Path:     path,
+		Data:     make([]internal.Data, 0, len(data)),
+		StartTS:  h.FirstTS(),
+		Interval: h.Interval(),
+	}
 
 	for _, snapshot := range data {
-		rc = append(rc, snapshot.Get(key...))
+		if d := snapshot.Get(path...); d != nil {
+			rc.Data = append(rc.Data, *d)
+		}
 	}
 
 	return rc

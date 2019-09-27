@@ -13,7 +13,7 @@ import (
 type entry struct {
 	Name string
 	Path []string
-	Data *faster.Snapshot
+	Data faster.Data
 }
 
 // Key -- returns Path + Name
@@ -49,31 +49,33 @@ func (e *entry) toMsec(value time.Duration) string {
 
 // PrettyAverage -- returns the average in msec (with space as thousands-separator)
 func (e *entry) PrettyAverage() string {
-	return e.toMsec(e.Data.Average)
+	return e.toMsec(e.Data.Average())
 }
 
 func (e *entry) PrettyTotal() string {
-	return e.toMsec(e.Data.Duration)
+	return e.toMsec(e.Data.TotalTime)
 }
 
 func flattenSnapshot(snap *faster.Snapshot) []entry {
 	return recFlattenSnapshot(nil, snap, nil)
 }
 
-func recFlattenSnapshot(list []entry, snap *faster.Snapshot, pathPrefix []string) []entry {
-	for k, v := range snap.Children {
-		list = append(list, entry{
-			Name: k,
-			Path: pathPrefix,
-			Data: v,
-		})
+func recFlattenSnapshot(rc []entry, snap *faster.Snapshot, pathPrefix []string) []entry {
+	for _, k := range snap.Children(pathPrefix...) {
+		if d := snap.Get(append(pathPrefix, k)...); d != nil {
+			rc = append(rc, entry{
+				Name: k,
+				Path: pathPrefix,
+				Data: *d,
+			})
+		}
 	}
 
-	for name, child := range snap.Children {
-		list = recFlattenSnapshot(list, child, append(pathPrefix, name))
+	for _, name := range snap.Children(pathPrefix...) {
+		rc = recFlattenSnapshot(rc, snap, append(pathPrefix, name))
 	}
 
-	return list
+	return rc
 }
 
 func sortByPath(data []entry) {

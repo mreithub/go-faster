@@ -5,9 +5,9 @@ import "time"
 // Singleton -- global GoFaster instance
 var Singleton = New(true)
 
-// GetSnapshot -- Returns a Snapshot of the GoFaster (synchronously)
-func GetSnapshot() *Snapshot {
-	return Singleton.GetSnapshot()
+// TakeSnapshot -- Returns a Snapshot of the GoFaster (synchronously)
+func TakeSnapshot() *Snapshot {
+	return Singleton.TakeSnapshot()
 }
 
 // Track -- Tracks an instance of 'key' (in singleton mode)

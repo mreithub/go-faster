@@ -49,7 +49,7 @@ td:first-child { text-align: initial; }
       </td>
       <td>{{or .Data.Active ""}}</td>
       <td>{{or .Data.Count ""}}</td>
-      <td data-raw="{{printf "%d" .Data.Duration}}" title="{{.Data.Duration}}">{{.PrettyTotal}}</td>
+      <td data-raw="{{printf "%d" .Data.TotalTime}}" title="{{.Data.TotalTime}}">{{.PrettyTotal}}</td>
       <td data-raw="{{printf "%d" .Data.Average}}" title="{{.Data.Average}}">{{.PrettyAverage}}</td>
     </tr>
     {{end}}

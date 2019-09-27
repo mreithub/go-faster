@@ -58,7 +58,7 @@ func processStuff(name string) chan string {
 }
 
 func fasterJSON(w http.ResponseWriter, r *http.Request) {
-	data, _ := json.MarshalIndent(faster.GetSnapshot(), "", "  ")
+	data, _ := json.MarshalIndent(faster.TakeSnapshot(), "", "  ")
 
 	w.Header().Add("Content-type", "application/json")
 	w.Write(data)

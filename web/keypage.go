@@ -55,10 +55,11 @@ func (p *KeyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
 	if len(sortedTickers) > 0 {
 		var req = &info.Requests
 		selectedTicker = p.getTicker(r, tickers, sortedTickers[0])
-		for _, snap := range selectedTicker.ForKey(key...).Relative() {
-			req.TS = append(req.TS, snap.Ts.UnixNano()/int64(time.Millisecond))
+		var timeseries = selectedTicker.GetData(key...).Relative()
+		for i, snap := range timeseries.Data {
+			req.TS = append(req.TS, timeseries.GetTimestamp(i).UnixNano()/int64(time.Millisecond))
 			req.Counts = append(req.Counts, snap.Count)
-			req.AvgMsec = append(req.AvgMsec, int64(snap.Average/time.Millisecond))
+			req.AvgMsec = append(req.AvgMsec, int64(snap.Average()/time.Millisecond))
 		}
 
 		for _, h := range sortedTickers {
@@ -72,27 +73,28 @@ func (p *KeyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if snap := p.faster.GetSnapshot().Get(key...); snap != nil {
+	if snap := p.faster.TakeSnapshot().Get(key...); snap != nil {
 		info.Active = snap.Active
-		info.AvgMS = int64(snap.Average / time.Millisecond)
+		info.AvgMS = int64(snap.Average() / time.Millisecond)
 		info.Total = snap.Count
-		if h := snap.Histogram; h != nil {
-			var durations, counts = h.GetValues()
-			if len(durations) == len(counts) {
-				for i, duration := range durations {
-					var count = counts[i]
+		/*		if h := snap.Histogram; h != nil {
+				var durations, counts = h.GetValues()
+				if len(durations) == len(counts) {
+					for i, duration := range durations {
+						var count = counts[i]
 
-					var data = map[string]interface{}{
-						"duration": duration.String(),
-						"ns":       duration / time.Nanosecond,
-						"count":    count,
+						var data = map[string]interface{}{
+							"duration": duration.String(),
+							"ns":       duration / time.Nanosecond,
+							"count":    count,
+						}
+						info.Histogram = append(info.Histogram, data)
 					}
-					info.Histogram = append(info.Histogram, data)
 				}
-			}
-		}
+			}*/
 	}
 
+	w.Header().Set("Content-type", "application/json")
 	if err := json.NewEncoder(w).Encode(info); err != nil {
 		log.Print("Error: failed to encode info.json: ", err)
 	}

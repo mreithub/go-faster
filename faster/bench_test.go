@@ -44,8 +44,8 @@ func BenchmarkTrackDoneDeferred(b *testing.B) {
 	//log.Printf("data: %s", j)
 }
 
-// benchmarkGetSnapshot -- Measure how long it takes to create a deep copy of the snapshot data
-func benchmarkGetSnapshot(count int, b *testing.B) {
+// benchmarkTakeSnapshot -- Measure how long it takes to create a deep copy of the snapshot data
+func benchmarkTakeSnapshot(count int, b *testing.B) {
 	// setup
 	g := New(true)
 	for n := 0; n < count; n++ {
@@ -53,14 +53,14 @@ func benchmarkGetSnapshot(count int, b *testing.B) {
 	}
 
 	for n := 0; n < b.N; n++ {
-		snap = g.GetSnapshot()
+		snap = g.TakeSnapshot()
 	}
 }
 
-func BenchmarkGetSnapshot100(b *testing.B) {
-	benchmarkGetSnapshot(100, b)
+func BenchmarkTakeSnapshot100(b *testing.B) {
+	benchmarkTakeSnapshot(100, b)
 }
 
-func BenchmarkGetSnapshot1000(b *testing.B) {
-	benchmarkGetSnapshot(1000, b)
+func BenchmarkTakeSnapshot1000(b *testing.B) {
+	benchmarkTakeSnapshot(1000, b)
 }

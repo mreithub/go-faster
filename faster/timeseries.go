@@ -1,13 +1,17 @@
 package faster
 
-import "time"
+import (
+	"time"
+
+	"github.com/mreithub/go-faster/faster/internal"
+)
 
 // TimeSeries -- excerpt from a History
 type TimeSeries struct {
 	// Path -- path of the time series
 	Path []string
 	// Data -- data over time (index 0 was taken at StartTS)
-	Data []Data
+	Data []internal.Data
 	// StartTS -- timestamp of the first Data point
 	StartTS time.Time
 	// Interval -- interval between Data points (note that )
@@ -37,7 +41,7 @@ func (s TimeSeries) Relative() TimeSeries {
 	}
 
 	var rc = TimeSeries{
-		Data:     make([]Data, 0, len(s.Data)-1),
+		Data:     make([]internal.Data, 0, len(s.Data)-1),
 		Interval: s.Interval,
 		Path:     s.Path,
 		StartTS:  s.StartTS, // TODO think about modifying the timestamps (i.e. startTS += interval/2)

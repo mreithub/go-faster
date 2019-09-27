@@ -15,16 +15,19 @@ import (
 
 // Faster -- A simple, go-style key-based reference counter that can be used for profiling your application (main class)
 type Faster struct {
-	// internal data structure -- only ever accessed from within the run() goroutine // TODO check if this is true
-	root *internal.Data
+	tree       internal.RWTree
+	data       []internal.Data
+	histograms []histogram.Histogram
+
+	withHistograms bool
 
 	// processed by the run() goroutine
 	evChannel chan internal.Event
 
-	// calling GetSnapshot() triggers an internal.EvSnapshot which in turn causes
+	// calling TakeSnapshot() triggers an internal.EvSnapshot which in turn causes
 	// the run() goroutine to take one and push it here -- while it's not guaranteed
-	// that each GetSnapshot() call will read the response to its own request
-	// (multiple GetSnapshot() calls might block concurrently), that doesn't really
+	// that each TakeSnapshot() call will read the response to its own request
+	// (multiple TakeSnapshot() calls might block concurrently), that doesn't really
 	// change the results of each call
 	snapshotChannel chan *Snapshot
 
@@ -145,14 +148,14 @@ func (f *Faster) run() {
 			//log.Print("~~gofaster: ", msg)
 			switch msg.Type {
 			case internal.EvTrack:
-				f.root.GetChild(msg.Path...).Active++
+				f.onTrack(msg.Path)
 			case internal.EvDone:
-				f.root.GetChild(msg.Path...).Done(msg.Took)
+				f.onDone(msg.Path, msg.Took)
 			case internal.EvSnapshot:
-				var snap = f.takeSnapshotRec(f.root, time.Now())
+				var snap = f.takeSnapshot(time.Now())
 				f.snapshotChannel <- snap
 			case internal.EvReset:
-				f.root = new(internal.Data)
+				f.onReset()
 			case internal.EvStop:
 				return // TODO stop this GoFaster instance safely
 			default:
@@ -160,10 +163,38 @@ func (f *Faster) run() {
 			}
 		case history := <-f.tickChan:
 			//log.Print("tick: ", history)
-			var snap = f.takeSnapshotRec(f.root, time.Now())
+			var snap = f.takeSnapshot(time.Now())
 			history.push(snap)
 		}
 	}
+}
+
+// getData -- returns a pointer to the internal.Data object with the given index (extending f.data if necessary)
+func (f *Faster) getData(index int) *internal.Data {
+	if index >= len(f.data) {
+		f.data = append(f.data, make([]internal.Data, index-len(f.data)+1)...)
+	}
+	return &f.data[index]
+}
+
+// getDataForPath -- returns a pointer to the internal.Data object with the given path (or creates it if necessary)
+func (f *Faster) getDataForPath(path ...string) *internal.Data {
+	var index = f.tree.GetIndex(path...)
+	return f.getData(index)
+}
+
+func (f *Faster) onDone(path []string, took time.Duration) {
+	f.getDataForPath(path...).Done(took)
+}
+
+func (f *Faster) onReset() {
+	f.data = nil
+	f.histograms = nil
+	f.tree.Reset()
+}
+
+func (f *Faster) onTrack(path []string) {
+	f.getDataForPath(path...).Active++
 }
 
 // ListTickers -- returns the (currently registered) History tickers (taking periodic snapshots)
@@ -179,8 +210,8 @@ func (f *Faster) ListTickers() map[string]*History {
 	return rc
 }
 
-// GetSnapshot -- Creates and returns a deep copy of the current state (including child instance states)
-func (f *Faster) GetSnapshot() *Snapshot {
+// TakeSnapshot -- tells the go-faster goroutine to take and return a deep copy of its current state
+func (f *Faster) TakeSnapshot() *Snapshot {
 	f.do(internal.EvSnapshot, nil, 0)
 	return <-f.snapshotChannel
 }
@@ -189,25 +220,15 @@ func (f *Faster) GetSnapshot() *Snapshot {
 //
 // should only ever be called from within the run() goroutine
 // 'now' is passed all the way down
-func (f *Faster) takeSnapshotRec(data *internal.Data, now time.Time) *Snapshot {
-	var children = make(map[string]*Snapshot, len(data.Children))
-
-	for key, child := range data.Children {
-		children[key] = f.takeSnapshotRec(child, now)
-	}
-
+func (f *Faster) takeSnapshot(now time.Time) *Snapshot {
 	var rc = Snapshot{
-		Active:   data.Active,
-		Average:  data.Average(),
-		Count:    data.Count,
-		Duration: data.TotalTime,
-		Ts:       now,
-		Children: children,
+		tree:       f.tree.Clone(),
+		data:       make([]internal.Data, len(f.data)),
+		histograms: make([]histogram.Histogram, len(f.histograms)),
+		TS:         now,
 	}
-
-	if data.Histogram != nil {
-		rc.Histogram = data.Histogram.Copy()
-	}
+	copy(rc.data, f.data)
+	copy(rc.histograms, f.histograms)
 
 	return &rc
 }
@@ -220,7 +241,8 @@ func (f *Faster) Reset() {
 // New -- Construct a new root-level GoFaster instance
 func New(withHistograms bool) *Faster {
 	rc := &Faster{
-		root:            new(internal.Data),
+		withHistograms: withHistograms,
+
 		evChannel:       make(chan internal.Event, 100),
 		snapshotChannel: make(chan *Snapshot, 5),
 
@@ -229,9 +251,6 @@ func New(withHistograms bool) *Faster {
 		StartTS:  time.Now(),
 	}
 
-	if withHistograms {
-		rc.root.Histogram = new(histogram.Histogram)
-	}
 	go rc.run()
 
 	return rc

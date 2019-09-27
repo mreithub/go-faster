@@ -9,7 +9,7 @@ It can be used to:
 - Check if your goroutines exit properly
 - Track calls to your HTTP endpoints (and their execution time) - see below
 
-To access the internal profiling data, use `GetSnapshot()`.
+To access the internal profiling data, use `TakeSnapshot()`.
 It'll ask the worker goroutine to create a deep copy of Faster's instance current state.
 
 GoFaster's code is thread safe. It uses a messaging channel read by a single worker goroutine
@@ -44,7 +44,7 @@ ref := g.Track("foo"); defer ref.Done()
 ```
 
 
-At any point in time you can call `GetSnapshot()` to obtain a deep copy of the measurements.
+At any point in time you can call `TakeSnapshot()` to obtain a deep copy of the measurements.
 
 
 
@@ -242,8 +242,8 @@ $ go test --run=XXX --bench=.
 BenchmarkMeasureTime-4        	50000000	        33.9 ns/op
 BenchmarkTrackDone-4           	 5000000	       339 ns/op
 BenchmarkTrackDoneDeferred-4   	 1000000	      1124 ns/op
-BenchmarkGetSnapshot100-4     	  100000	     12367 ns/op
-BenchmarkGetSnapshot1000-4    	   10000	    127117 ns/op
+BenchmarkTakeSnapshot100-4     	  100000	     12367 ns/op
+BenchmarkTakeSnapshot1000-4    	   10000	    127117 ns/op
 PASS
 ok  	github.com/mreithub/faster	7.605s
 ```
@@ -251,7 +251,7 @@ ok  	github.com/mreithub/faster	7.605s
 - `BenchmarkMeasureTime()` measures the cost of calling time.Now() twice and calculating the nanoseconds between them
 - `BenchmarkTrackDone()` calls `faster.Track("hello").Done()` directly (without using `defer`)
 - `BenchmarkTrackDoneDeferred()` uses `defer` (as in the snippet above)
-- `BenchmarkGetSnapshot*()` measure the time it takes to take a snapshot of a GoFaster instance with 100 and 1000 entries (= different keys) respectively
+- `BenchmarkTakeSnapshot*()` measure the time it takes to take a snapshot of a GoFaster instance with 100 and 1000 entries (= different keys) respectively
 
 [golang]: https://golang.org/
 [godoc]: https://godoc.org/github.com/mreithub/faster
