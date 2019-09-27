@@ -82,6 +82,25 @@ func trackRequests(router *mux.Router) http.Handler {
 	})
 }
 
+// ExampleWorker -- wakes up in random intervals to "do" things
+type ExampleWorker struct {
+}
+
+// Run -- main loop for the ExampleWorker goroutine
+func (w *ExampleWorker) Run() {
+	for {
+		var sleepInterval = time.Duration(50+rand.Intn(1400)) * time.Millisecond
+		w.work()
+		time.Sleep(sleepInterval)
+	}
+}
+
+func (w *ExampleWorker) work() {
+	defer faster.TrackFn().Done()
+	var workInterval = time.Duration(rand.Intn(300)) * time.Millisecond
+	time.Sleep(workInterval)
+}
+
 func main() {
 	// setup http mux and loggin
 	var r = mux.NewRouter()
@@ -97,6 +116,10 @@ func main() {
 	// set up periodic go-faster snapshots
 	faster.SetTicker("1sec", 1*time.Second, 120) // 2min
 	faster.SetTicker("1min", 1*time.Minute, 60)  // 1h
+
+	// start ExampleWorker
+	var worker ExampleWorker
+	go worker.Run()
 
 	// start web server
 	var addr = "localhost:1234"
