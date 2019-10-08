@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mreithub/go-faster/dashboard"
 	"github.com/mreithub/go-faster/faster"
-	"github.com/mreithub/go-faster/web"
 )
 
 func indexHTML(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func delayedHTML(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", indexHTML)
 	http.HandleFunc("/delayed.html", delayedHTML)
-	http.Handle("/_faster/", http.StripPrefix("/_faster", web.NewHandler(faster.Singleton)))
+	http.Handle("/_faster/", http.StripPrefix("/_faster", dashboard.NewHandler(faster.Singleton)))
 
 	var addr = "localhost:1234"
 	log.Printf("starting web server at '%s'", addr)
