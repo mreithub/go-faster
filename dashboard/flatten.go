@@ -10,24 +10,24 @@ import (
 	"github.com/mreithub/go-faster/faster"
 )
 
-type entry struct {
+type flatEntry struct {
 	Name string
 	Path []string
 	Data faster.DataPoint
 }
 
 // Key -- returns Path + Name
-func (e *entry) Key() []string {
+func (e *flatEntry) Key() []string {
 	return append(e.Path, e.Name)
 }
 
-func (e *entry) JSONPath() string {
+func (e *flatEntry) JSONPath() string {
 	var rc, _ = json.Marshal(append(e.Path, e.Name))
 	return string(rc)
 }
 
 // formats a time.Duration as string (in msec) that can be easily parsed by the human eye when aligned right
-func (e *entry) toMsec(value time.Duration) string {
+func (e *flatEntry) toMsec(value time.Duration) string {
 	if value == 0 {
 		return ""
 	}
@@ -48,22 +48,23 @@ func (e *entry) toMsec(value time.Duration) string {
 }
 
 // PrettyAverage -- returns the average in msec (with space as thousands-separator)
-func (e *entry) PrettyAverage() string {
+func (e *flatEntry) PrettyAverage() string {
 	return e.toMsec(e.Data.Average())
 }
 
-func (e *entry) PrettyTotal() string {
+func (e *flatEntry) PrettyTotal() string {
 	return e.toMsec(e.Data.TotalTime())
 }
 
-func flattenSnapshot(snap *faster.Snapshot) []entry {
+// flattenSnapshot -- takes the hierarchical data stored in a faster.Snapshot and puts it into a (sorted) slice
+func flattenSnapshot(snap *faster.Snapshot) []flatEntry {
 	return recFlattenSnapshot(nil, snap, nil)
 }
 
-func recFlattenSnapshot(rc []entry, snap *faster.Snapshot, pathPrefix []string) []entry {
+func recFlattenSnapshot(rc []flatEntry, snap *faster.Snapshot, pathPrefix []string) []flatEntry {
 	for _, k := range snap.Children(pathPrefix...) {
 		if d := snap.Get(append(pathPrefix, k)...); d != nil {
-			rc = append(rc, entry{
+			rc = append(rc, flatEntry{
 				Name: k,
 				Path: pathPrefix,
 				Data: d,
@@ -78,7 +79,7 @@ func recFlattenSnapshot(rc []entry, snap *faster.Snapshot, pathPrefix []string) 
 	return rc
 }
 
-func sortByPath(data []entry) {
+func sortByPath(data []flatEntry) {
 	sort.Slice(data, func(i, j int) bool {
 		return pathLessThan(
 			append(data[i].Path, data[i].Name),
