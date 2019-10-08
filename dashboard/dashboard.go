@@ -16,7 +16,7 @@ type Dashboard struct {
 	faster    *faster.Faster
 	mux       *http.ServeMux
 	templates map[string]*template.Template
-	keyPage   *KeyPage
+	keyPage   *keyPage
 
 	AuthHandler http.Handler
 }
@@ -85,7 +85,7 @@ func New(faster *faster.Faster) *Dashboard {
 		faster:    faster,
 		mux:       mux,
 		templates: templates,
-		keyPage: &KeyPage{
+		keyPage: &keyPage{
 			faster:    faster,
 			templates: templates,
 		},

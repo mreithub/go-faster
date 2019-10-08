@@ -11,14 +11,14 @@ import (
 	"github.com/mreithub/go-faster/faster"
 )
 
-// KeyPage -- implements /key/*
-type KeyPage struct {
+// keyPage -- implements /key/*
+type keyPage struct {
 	faster    *faster.Faster
 	templates map[string]*template.Template
 }
 
 // InfoJSON -- implements GET key/info.json
-func (p *KeyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
+func (p *keyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
 	if !checkMethod(w, r, "GET") {
 		return
 	}
@@ -103,7 +103,7 @@ func (p *KeyPage) InfoJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 // ServeHTTP -- implements GET key
-func (p *KeyPage) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (p *keyPage) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !checkMethod(w, r, "GET") {
 		return
 	}
@@ -140,7 +140,7 @@ func (p *KeyPage) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // returns the History object requested by the user (or 'default' if not specified/found)
-func (p *KeyPage) getTicker(r *http.Request, tickers map[string]*faster.History, defaultValue *faster.History) *faster.History {
+func (p *keyPage) getTicker(r *http.Request, tickers map[string]*faster.History, defaultValue *faster.History) *faster.History {
 	var name = r.URL.Query().Get("ticker")
 	if name != "" {
 		if h, ok := tickers[name]; ok {
@@ -151,7 +151,7 @@ func (p *KeyPage) getTicker(r *http.Request, tickers map[string]*faster.History,
 }
 
 // sorts the given History tickers by their interval - lowest first
-func (p *KeyPage) sortHistoryByInterval(data map[string]*faster.History) []*faster.History {
+func (p *keyPage) sortHistoryByInterval(data map[string]*faster.History) []*faster.History {
 	if data == nil || len(data) == 0 {
 		return nil
 	}
