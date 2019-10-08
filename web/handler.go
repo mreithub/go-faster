@@ -73,7 +73,7 @@ func (h *WebHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.mux.ServeHTTP(w, r)
 }
 
-// NewHandler -- returns a http handler for the given GoFaster instance
+// NewHandler -- returns a http handler for the given Faster instance
 func NewHandler(faster *faster.Faster) http.Handler {
 	var mux = http.NewServeMux()
 	var templates, err = parseTemplates()

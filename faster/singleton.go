@@ -2,10 +2,10 @@ package faster
 
 import "time"
 
-// Singleton -- global GoFaster instance
+// Singleton -- global go-faster instance
 var Singleton = New(true)
 
-// TakeSnapshot -- Returns a Snapshot of the GoFaster (synchronously)
+// TakeSnapshot -- Returns a Snapshot of the current Faster state
 func TakeSnapshot() *Snapshot {
 	return Singleton.TakeSnapshot()
 }
@@ -21,7 +21,7 @@ func TrackFn() *Tracker {
 	return Singleton.Track(key...)
 }
 
-// Reset -- resets the internal state of the singleton GoFaster instance
+// Reset -- resets the internal state of the singleton Faster instance
 func Reset() {
 	Singleton.Reset()
 }

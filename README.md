@@ -1,4 +1,4 @@
-# GoFaster - Find bottlenecks in production Go Apps
+# go-faster - Find bottlenecks in production Go Apps
 
 [![Build Status](https://travis-ci.org/mreithub/faster.svg?branch=master)](https://travis-ci.org/mreithub/faster)
 
@@ -12,7 +12,7 @@ It can be used to:
 To access the internal profiling data, use `TakeSnapshot()`.
 It'll ask the worker goroutine to create a deep copy of Faster's instance current state.
 
-GoFaster's code is thread safe. It uses a messaging channel read by a single worker goroutine
+go-faster's code is thread safe. It uses a messaging channel read by a single worker goroutine
 which does the heavy lifting.  
 Calls to `Track()` and `Done()` are asynchronous
 (that asynchronousity doesn't affect time measurement though).  
@@ -32,8 +32,8 @@ Add the following snippet to each function (or goroutine) you want to track
 ref := faster.Track("foo"); defer ref.Done()
 ```
 
-The above snippet uses `GoFaster` in singleton mode. But you can also create your
-own `GoFaster` instances (and e.g. use different ones in different parts of your
+The above snippet uses `go-faster` in singleton mode. But you can also create your
+own `go-faster` instances (and e.g. use different ones in different parts of your
 application):
 
 ```go
@@ -50,7 +50,7 @@ At any point in time you can call `TakeSnapshot()` to obtain a deep copy of the 
 
 ### Scoped measurements
 
-GoFaster not only supports independent `Faster` instances but also has a scope hierarchy (or tree structure
+go-faster not only supports independent `Faster` instances but also has a scope hierarchy (or tree structure
 if you will).
 
 With `faster.GetInstance(path ...string)` you can get a specific child of the global singleton instance.
@@ -58,13 +58,13 @@ With `faster.GetInstance(path ...string)` you can get a specific child of the gl
 An example use case would be seperate, possibly nested instances for different parts of your application
 (e.g. `faster.GetInstance("http")` for HTTP endpoint handlers, `faster.GetInstance("dao", "psql")` for the PostgreSQL based DAO, ...)
 
-You can see a simple example of GoFaster scopes in action in the *gorilla-mux* example below (or in the `examples/gorillamux/` directory)
+You can see a simple example of go-faster scopes in action in the *gorilla-mux* example below (or in the `examples/gorillamux/` directory)
 
 
 
 ## Example (excerpt from [webserver.go](examples/webserver/webserver.go)):
 
-This example shows how to use GoFaster in your web applications.  
+This example shows how to use go-faster in your web applications.  
 Here it tracks all web handler invocations.
 
 Have a look at the usage documentation at [godoc.org][godoc].
@@ -139,14 +139,14 @@ like this:
 ## Using [`gorilla-mux`][gorillamux]
 
 If you're using [gorilla-mux][gorillamux], there's a simple way to
-add GoFaster to your project:
+add go-faster to your project:
 
 (taken from the example in `examples/gorillamux/`)
 
 ```go
 func trackRequests(router *mux.Router) http.Handler {
   return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    // Try to find the matching HTTP route (we'll use that as GoFaster key)
+    // Try to find the matching HTTP route (we'll use that as go-faster key)
     var match mux.RouteMatch
     if router.Match(r, &match) {
       path, _ := match.Route.GetPathTemplate()
@@ -173,7 +173,7 @@ var handler = handlers.LoggingHandler(os.Stdout, trackRequests(router))
 log.Fatal(http.ListenAndServe(addr, handler))
 ```
 
-You'll get GoFaster data looking something like this:
+You'll get go-faster data looking something like this:
 
 ```json
 {
@@ -223,7 +223,7 @@ Requests matched by the same gorilla-mux route will be grouped together.
 
 ## Performance impact
 
-GoFaster aims to have as little impact on your application's performance as possible.
+go-faster aims to have as little impact on your application's performance as possible.
 
 That's why all the processing is done asynchronously in a separate goroutine.
 
@@ -251,7 +251,7 @@ ok  	github.com/mreithub/faster	7.605s
 - `BenchmarkMeasureTime()` measures the cost of calling time.Now() twice and calculating the nanoseconds between them
 - `BenchmarkTrackDone()` calls `faster.Track("hello").Done()` directly (without using `defer`)
 - `BenchmarkTrackDoneDeferred()` uses `defer` (as in the snippet above)
-- `BenchmarkTakeSnapshot*()` measure the time it takes to take a snapshot of a GoFaster instance with 100 and 1000 entries (= different keys) respectively
+- `BenchmarkTakeSnapshot*()` measure the time it takes to take a snapshot of a go-faster instance with 100 and 1000 entries (= different keys) respectively
 
 [golang]: https://golang.org/
 [godoc]: https://godoc.org/github.com/mreithub/faster

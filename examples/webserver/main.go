@@ -16,7 +16,7 @@ func indexHTML(w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte(`<h1>Index</h1>
   <a href="/delayed.html">delayed.html</a><br />
-  <a href="/_faster/">GoFaster dashboard</a>`))
+  <a href="/_faster/">go-faster dashboard</a>`))
 }
 
 func delayedHTML(w http.ResponseWriter, r *http.Request) {

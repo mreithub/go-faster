@@ -46,7 +46,7 @@ func processStuff(name string) chan string {
 	rc := make(chan string)
 
 	go func() {
-		// since processing takes some time, we'll add a separate GoFaster instance here (this time in the "app" scope)
+		// since processing takes some time, we'll add a separate Faster instance here (this time in the "app" scope)
 		defer faster.TrackFn().Done()
 
 		var delay = time.Duration(rand.Intn(1700)) * time.Millisecond
@@ -66,7 +66,7 @@ func fasterJSON(w http.ResponseWriter, r *http.Request) {
 
 func trackRequests(router *mux.Router) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Try to find the matching HTTP route (we'll use that as GoFaster key)
+		// Try to find the matching HTTP route (we'll use that as go-faster key)
 		var match mux.RouteMatch
 		if router.Match(r, &match) {
 			path, _ := match.Route.GetPathTemplate()

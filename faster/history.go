@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// History -- periodically takes snapshots of GoFaster instances
+// History -- periodically takes snapshots of go-faster instances
 //
 // All methods are thread safe
 type History struct {

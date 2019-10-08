@@ -4,7 +4,7 @@ import "time"
 
 // Histogram -- Keeps track of time.Duration values and their distribution
 //
-// This struct is not thread safe (but all instances returned by GoFaster
+// This struct is not thread safe (but all instances returned by go-faster
 // should be considered immutable)
 type Histogram struct {
 	count int64
