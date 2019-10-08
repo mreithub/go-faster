@@ -11,8 +11,8 @@ import (
 	"github.com/mreithub/go-faster/faster"
 )
 
-// WebHandler -- implements go-faster's web dashboard
-type WebHandler struct {
+// Dashboard -- implements go-faster's web dashboard
+type Dashboard struct {
 	faster    *faster.Faster
 	mux       *http.ServeMux
 	templates map[string]*template.Template
@@ -33,22 +33,22 @@ func checkMethod(w http.ResponseWriter, r *http.Request, whitelist ...string) bo
 	return false
 }
 
-func (h *WebHandler) indexPage(w http.ResponseWriter, r *http.Request) {
+func (d *Dashboard) indexPage(w http.ResponseWriter, r *http.Request) {
 	if !checkMethod(w, r, "GET") {
 		return
 	}
-	ref := h.faster.Track("_faster", "index")
+	ref := d.faster.Track("_faster", "index")
 	defer ref.Done()
 
-	var tpl = h.templates["index.html"]
+	var tpl = d.templates["index.html"]
 	var data = flattenSnapshot(faster.TakeSnapshot())
 	sortByPath(data)
 	var err = tpl.Execute(w, map[string]interface{}{
 		"data":       data,
 		"cores":      runtime.NumCPU(),
 		"goroutines": runtime.NumGoroutine(),
-		"uptime":     time.Now().Sub(h.faster.StartTS),
-		"startTS":    h.faster.StartTS.Format(time.RFC3339),
+		"uptime":     time.Now().Sub(d.faster.StartTS),
+		"startTS":    d.faster.StartTS.Format(time.RFC3339),
 	})
 
 	if err != nil {
@@ -56,11 +56,11 @@ func (h *WebHandler) indexPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *WebHandler) snapshotJSON(w http.ResponseWriter, r *http.Request) {
+func (d *Dashboard) snapshotJSON(w http.ResponseWriter, r *http.Request) {
 	if !checkMethod(w, r, "GET") {
 		return
 	}
-	ref := h.faster.Track("_faster", "snapshot.json")
+	ref := d.faster.Track("_faster", "snapshot.json")
 	defer ref.Done()
 
 	data, _ := json.MarshalIndent(faster.TakeSnapshot(), "", "  ")
@@ -69,18 +69,19 @@ func (h *WebHandler) snapshotJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func (h *WebHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.mux.ServeHTTP(w, r)
+// ServeHTTP -- implements http.Handler
+func (d *Dashboard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	d.mux.ServeHTTP(w, r)
 }
 
-// NewHandler -- returns a http handler for the given Faster instance
-func NewHandler(faster *faster.Faster) http.Handler {
+// New -- returns a HTTP Dashboard for the given Faster instance
+func New(faster *faster.Faster) *Dashboard {
 	var mux = http.NewServeMux()
 	var templates, err = parseTemplates()
 	if err != nil {
 		panic(err) // this only happens if there are template parsing errors
 	}
-	var rc = WebHandler{
+	var rc = Dashboard{
 		faster:    faster,
 		mux:       mux,
 		templates: templates,
