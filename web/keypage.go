@@ -130,7 +130,7 @@ func (p *KeyPage) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"keyName":       key[len(key)-1],
 		"sortedTickers": sortedTickers,
 		"ticker":        selectedTicker,
-		"url":           &linkBuilder{*r.URL},
+		"url":           &urlBuilder{*r.URL},
 	})
 
 	if err != nil {
