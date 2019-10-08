@@ -41,7 +41,7 @@ func (d *Dashboard) indexPage(w http.ResponseWriter, r *http.Request) {
 	defer ref.Done()
 
 	var tpl = d.templates["index.html"]
-	var data = flattenSnapshot(faster.TakeSnapshot())
+	var data = flattenSnapshot(d.faster.TakeSnapshot())
 	sortByPath(data)
 	var err = tpl.Execute(w, map[string]interface{}{
 		"data":       data,
@@ -63,7 +63,7 @@ func (d *Dashboard) snapshotJSON(w http.ResponseWriter, r *http.Request) {
 	ref := d.faster.Track("_faster", "snapshot.json")
 	defer ref.Done()
 
-	data, _ := json.MarshalIndent(faster.TakeSnapshot(), "", "  ")
+	data, _ := json.MarshalIndent(d.faster.TakeSnapshot(), "", "  ")
 
 	w.Header().Add("Content-type", "application/json")
 	w.Write(data)
