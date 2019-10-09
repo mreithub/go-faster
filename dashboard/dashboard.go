@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 
@@ -43,10 +44,13 @@ func (d *Dashboard) indexPage(w http.ResponseWriter, r *http.Request) {
 	var tpl = d.templates["index.html"]
 	var data = flattenSnapshot(d.faster.TakeSnapshot())
 	sortByPath(data)
+
+	var hostname, _ = os.Hostname()
 	var err = tpl.Execute(w, map[string]interface{}{
 		"data":       data,
 		"cores":      runtime.NumCPU(),
 		"goroutines": runtime.NumGoroutine(),
+		"hostname":   hostname,
 		"uptime":     time.Now().Sub(d.faster.StartTS),
 		"startTS":    d.faster.StartTS.Format(time.RFC3339),
 	})

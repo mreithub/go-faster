@@ -22,6 +22,7 @@ td:first-child { text-align: initial; }
 
 <h2>app info</h2>
 <table><tbody>
+<tr><th>hostname</th><td>{{.hostname}}</td></tr>
 <tr><th>app uptime</th><td title="{{.startTS}}">{{.uptime}}</td></tr>
 <tr><th>cpu</th><td>{{.cores}} cores</td></tr>
 <tr><th>goroutines</th><td>{{.goroutines}}</td></tr>
