@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"net/url"
 
-	"github.com/mreithub/go-faster/dashboard/internal"
+	"github.com/mreithub/go-faster/faster/dashboard/internal"
 )
 
 func parseTemplates() (map[string]*template.Template, error) {
